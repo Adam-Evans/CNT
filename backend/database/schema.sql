@@ -56,4 +56,4 @@ INSERT OR IGNORE INTO config (key, value) VALUES
 
 -- Create default super admin (password: admin123 - CHANGE THIS!)
 INSERT OR IGNORE INTO users (id, username, password_hash, is_super_admin) VALUES 
-    (1, 'admin', '$2a$10$rLjVqF8cqN9gqZPZqYGqwO7Z3qN6vXQkF3qN6vXQkF3qN6vXQkF3q', 1);
+    (1, 'admin', '$2b$12$fL8tbuKjrzjhcdjp.WDjIOvQ59FoqlDJjKJ0q0kpUbJQylfLt7xS2', 1);
