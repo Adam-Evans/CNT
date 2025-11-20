@@ -1,75 +1,280 @@
-# CNT
-CNT (Chicken Nugget Tuesday) - Phase 1 Implementation Plan
-Repository is currently empty (only README and .gitignore exist). Building complete application from scratch.
+# 🍗 CNT (Chicken Nugget Tuesday)
 
-Implementation Checklist
-Infrastructure & Project Setup
+A full-stack web application for managing "The Great Auto-Trail CNT" event - a fun competition where brokers compete to sell the most chicken nuggets!
 
- Create Go backend server structure with proper module initialization
- Create React frontend application structure with Vite
- Set up SQLite database schema with all required tables
- Create Dockerfile with multi-stage build (React + Go + SQLite)
- Create docker-compose for easy local development
- Add necessary .gitignore entries for node_modules, dist, database files
-Backend (Go + Gin/Echo + SQLite)
+## Features
 
- Implement user authentication with password hashing
- Create broker profile management endpoints
- Implement ordering system endpoints
- Add super admin configuration endpoints (unit cost, end date)
- Integrate Google Gemini Flash API for AI propaganda generation
- Add caching logic for AI-generated content
- Implement CORS and static file serving
-Frontend (React + Vite + Tailwind CSS)
+### For Everyone
+- 🏠 Customer-facing home page to browse brokers and place orders
+- 📝 EULA/Terms popup with the "Adam Clause" 
+- 🔐 Secure authentication system
 
- Create broker login/authentication UI
- Build broker profile pages (view and edit)
- Create customer-facing broker selection page
- Implement order placement form
- Build super admin dashboard for configuration
- Add EULA/cookies/terms popup with "Adam clause"
- Style with Tailwind CSS and add animations
-Security & Testing
+### For Brokers
+- 👤 Personal profile management (bio, mission statement, testimonials, profile picture)
+- 📊 Order dashboard showing all customer orders
+- 💰 Revenue tracking (total and paid)
+- 🤖 AI-generated "anti-propaganda" using Google Gemini Flash (opposite day twist on their own bios!)
 
- Add input validation and sanitization
- Implement proper authentication middleware
- Test all API endpoints
- Test frontend flows
- Run security checks
-CI/CD
+### For Super Admin
+- 👑 Full system configuration (nugget pricing, event end date)
+- 📈 Broker leaderboard and statistics
+- 💳 Order management (mark orders as paid/unpaid)
+- 🎯 Access to all broker profiles and orders
 
- Create GitHub Actions workflow for testing and deployment
- Set up Docker build and push pipeline
-Documentation
+## Tech Stack
 
- Update README with setup and deployment instructions
-Original prompt
-This section details on the original issue you should resolve
+### Backend
+- **Go 1.22+** - Main backend language
+- **Gin** - Web framework
+- **SQLite** - Embedded database (zero configuration)
+- **Google Gemini Flash API** - AI propaganda generation
+- **JWT** - Authentication tokens
+- **bcrypt** - Password hashing
 
-<issue_title>Project phase 1</issue_title>
-<issue_description>Once a year we run an event - The Great Auto-Trail CNT (Chicken Nugget Tuesday). The goal being to involve as many people as possible to make them buy chicken nuggets from one of four brokers.
+### Frontend
+- **React 18** - UI framework
+- **Vite** - Build tool and dev server
+- **Tailwind CSS** - Styling
+- **React Router** - Navigation
+- **Axios** - HTTP client
 
-I'd like to build a dockerised golang/React website making use of sqlite for a database.
+### Infrastructure
+- **Docker** - Containerization
+- **Docker Compose** - Local development
+- **GitHub Actions** - CI/CD pipeline
 
-I'd like to implement a basic auth (user and password) for our "Brokers" to be able to login and build a profile. Profile may include: a profile picture, name, bio, mission statement, testimonials. I'd also need an ordering system (simple, just name, quantity, cost, isPaid). There is only one product: a 20 pack of chicken nuggets at a quantity of 1-10 boxes. All regular users get see the brokers, choose their preferred broker and place an order. Super admin (myself) would need to have config and write access to all brokers and config to set the unit cost of nuggets so we can work out who owes what.
+## Quick Start
 
-There will be some twists, when a broker is logged in they will see their own bio, I want to be able to set some silly "anti them" propaganda type entries using AI to basically use their bio and testimonials against them kind of like opposite day (using cache until the bio is altered (or cache is empty)). I'd like to use Google Gemini latest flash for this.
+### Prerequisites
+- Docker & Docker Compose (recommended)
+- OR: Go 1.22+, Node.js 20+, and npm
 
-Super admin (me) will be able to set price of nuggets and also end date/time so we can tally up the orders and see whos the winner. Regular users placing orders should not see who is winning or who has ordered with whom.
+### Option 1: Docker (Recommended)
 
-I also want a mock eula/cookies/terms popup with boilerplate, accept cookies, but sneak in a little jokey phrase about surrendering all of your orders to Adam when you use this site.
+1. Clone the repository:
+```bash
+git clone https://github.com/Adam-Evans/CNT.git
+cd CNT
+```
 
-Operation: Golden Nugget - Implementation Plan
+2. Create a `.env` file (copy from `.env.example`):
+```bash
+cp .env.example .env
+```
 
-Architecture Overview
-We will build a monolithic application packaged in a single Docker container for ease of deployment (since traffic will be bursty but low-volume).
+3. Edit `.env` and set your secrets:
+```env
+JWT_SECRET=your-super-secret-jwt-key
+GEMINI_API_KEY=your-gemini-api-key  # Optional - for AI features
+```
 
-Frontend: React (Vite), Tailwind CSS, Framer Motion (for juice).
+4. Start the application:
+```bash
+docker-compose up -d
+```
 
-Backend: Go (Golang) using Gin or Echo.
+5. Access the application at `http://localhost:8080`
 
-Database: SQLite (embedded, zero config).
+### Option 2: Local Development
 
-AI Layer: Google Gemini Flash 1.5 via Go client.
+#### Backend Setup
 
-Infrastructure: Docker, hosted on a cheap VPS (DigitalOcean/Hetzner) or Fly.io.
+1. Install Go dependencies:
+```bash
+go mod download
+```
+
+2. Initialize the database:
+```bash
+go run main.go
+# Database will be created at ./cnt.db
+```
+
+3. Run the backend:
+```bash
+# Set environment variables
+export JWT_SECRET=your-secret-key
+export GEMINI_API_KEY=your-api-key  # Optional
+export DB_PATH=./cnt.db
+export PORT=8080
+
+# Run the server
+go run main.go
+```
+
+#### Frontend Setup
+
+1. Navigate to frontend directory:
+```bash
+cd frontend
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Create `.env` file:
+```bash
+echo "VITE_API_URL=http://localhost:8080/api" > .env
+```
+
+4. Run the development server:
+```bash
+npm run dev
+```
+
+5. Access the frontend at `http://localhost:5173`
+
+## Default Credentials
+
+The application comes with a default super admin account:
+- **Username:** `admin`
+- **Password:** `admin123`
+
+⚠️ **IMPORTANT:** Change this password immediately after first login!
+
+## API Documentation
+
+### Public Endpoints
+
+#### Authentication
+- `POST /api/auth/login` - Login (broker or admin)
+- `POST /api/auth/register` - Register new broker account
+
+#### Brokers
+- `GET /api/brokers` - List all brokers with profiles
+- `GET /api/brokers/:id` - Get specific broker profile
+
+#### Orders
+- `POST /api/orders` - Place an order
+
+#### Configuration
+- `GET /api/config` - Get system configuration (price, end date)
+
+### Authenticated Endpoints (Broker)
+
+- `GET /api/auth/me` - Get current user info
+- `GET /api/my/profile` - Get my broker profile
+- `PUT /api/my/profile` - Update my broker profile
+- `GET /api/my/propaganda` - Get AI-generated propaganda for my profile
+- `GET /api/my/orders` - Get all my orders
+
+### Admin Endpoints
+
+- `GET /api/admin/orders` - Get all orders in the system
+- `PUT /api/admin/orders/:id` - Update order (payment status)
+- `GET /api/admin/stats` - Get broker statistics and leaderboard
+- `PUT /api/admin/config` - Update system configuration
+- `PUT /api/admin/brokers/:id` - Update any broker's profile
+
+## Database Schema
+
+The SQLite database contains the following tables:
+- `users` - User accounts (brokers and admin)
+- `broker_profiles` - Broker profile information
+- `orders` - Customer orders
+- `config` - System configuration
+- `ai_cache` - Cached AI-generated propaganda
+
+## AI Propaganda Feature
+
+When a broker views their dashboard, the system generates humorous "opposite day" propaganda based on their profile using Google Gemini Flash API. The content is cached until the profile is updated.
+
+To enable this feature:
+1. Get a free API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Set the `GEMINI_API_KEY` environment variable
+
+If no API key is set, the feature will gracefully degrade with a default message.
+
+## Deployment
+
+### Docker Hub Deployment
+
+The GitHub Actions workflow automatically builds and pushes Docker images to Docker Hub when pushing to the `main` branch.
+
+Required secrets:
+- `DOCKER_USERNAME` - Docker Hub username
+- `DOCKER_PASSWORD` - Docker Hub password/token
+
+### Manual Deployment
+
+1. Build the Docker image:
+```bash
+docker build -t cnt:latest .
+```
+
+2. Run the container:
+```bash
+docker run -d \
+  -p 8080:8080 \
+  -e JWT_SECRET=your-secret \
+  -e GEMINI_API_KEY=your-key \
+  -v cnt-data:/data \
+  cnt:latest
+```
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `DB_PATH` | No | `./cnt.db` | Path to SQLite database file |
+| `PORT` | No | `8080` | Server port |
+| `JWT_SECRET` | Yes | - | Secret key for JWT tokens |
+| `GEMINI_API_KEY` | No | - | Google Gemini API key for AI features |
+| `GIN_MODE` | No | `release` | Gin framework mode (debug/release) |
+
+## Development
+
+### Running Tests
+
+```bash
+# Backend tests
+go test ./...
+
+# Frontend tests (if added)
+cd frontend
+npm test
+```
+
+### Building for Production
+
+```bash
+# Build frontend
+cd frontend
+npm run build
+
+# Build backend
+go build -o cnt-server
+
+# Or use Docker
+docker build -t cnt:latest .
+```
+
+## Security Considerations
+
+- Change default admin password immediately
+- Use strong JWT_SECRET in production
+- Enable HTTPS in production (use reverse proxy like nginx)
+- Regularly update dependencies
+- Keep API keys secure and never commit them to git
+
+## License
+
+This project is for personal/educational use.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## Support
+
+For issues and questions, please use the GitHub issue tracker.
+
+---
+
+Made with 🍗 and ❤️ for Chicken Nugget Tuesday
+
