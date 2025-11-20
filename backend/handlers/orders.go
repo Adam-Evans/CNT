@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/Adam-Evans/CNT/backend/database"
 	"github.com/Adam-Evans/CNT/backend/models"
@@ -20,8 +21,23 @@ func CreateOrder(c *gin.Context) {
 
 	// Get current nugget price from config
 	db := database.GetDB()
+
+	// Check if orders are closed
+	var closingDateStr string
+	err := db.QueryRow("SELECT value FROM config WHERE key = 'orders_closing_date'").Scan(&closingDateStr)
+	if err == nil && closingDateStr != "" {
+		// Parse date and check if passed
+		const layout = "2006-01-02T15:04"
+		if closingDate, err := time.ParseInLocation(layout, closingDateStr, time.Local); err == nil {
+			if time.Now().After(closingDate) {
+				c.JSON(http.StatusForbidden, gin.H{"error": "Orders are now closed."})
+				return
+			}
+		}
+	}
+
 	var priceStr string
-	err := db.QueryRow("SELECT value FROM config WHERE key = 'nugget_price'").Scan(&priceStr)
+	err = db.QueryRow("SELECT value FROM config WHERE key = 'nugget_price'").Scan(&priceStr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get nugget price"})
 		return
@@ -122,8 +138,48 @@ func GetAllOrders(c *gin.Context) {
 	c.JSON(http.StatusOK, orders)
 }
 
-// UpdateOrder (Super Admin only) updates an order's payment status
+// UpdateOrder (Super Admin only) updates an order's payment status or broker
 func UpdateOrder(c *gin.Context) {
+	orderID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid order ID"})
+		return
+	}
+
+	var req struct {
+		IsPaid   *bool `json:"is_paid"`
+		BrokerID *int  `json:"broker_id"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	db := database.GetDB()
+
+	if req.IsPaid != nil {
+		_, err = db.Exec("UPDATE orders SET is_paid = ? WHERE id = ?", *req.IsPaid, orderID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update payment status"})
+			return
+		}
+	}
+
+	if req.BrokerID != nil {
+		_, err = db.Exec("UPDATE orders SET broker_id = ? WHERE id = ?", *req.BrokerID, orderID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update broker"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Order updated successfully"})
+}
+
+// UpdateMyOrder allows a broker to update payment status of their own order
+func UpdateMyOrder(c *gin.Context) {
+	userID := c.GetInt("user_id")
 	orderID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid order ID"})
@@ -133,21 +189,74 @@ func UpdateOrder(c *gin.Context) {
 	var req struct {
 		IsPaid bool `json:"is_paid"`
 	}
-
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	db := database.GetDB()
-	_, err = db.Exec("UPDATE orders SET is_paid = ? WHERE id = ?", req.IsPaid, orderID)
 
+	// Verify ownership
+	var ownerID int
+	err = db.QueryRow("SELECT broker_id FROM orders WHERE id = ?", orderID).Scan(&ownerID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		return
+	}
+
+	if ownerID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You can only update your own orders"})
+		return
+	}
+
+	_, err = db.Exec("UPDATE orders SET is_paid = ? WHERE id = ?", req.IsPaid, orderID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update order"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Order updated successfully"})
+}
+
+// DeleteMyOrder allows a broker to delete their own order
+func DeleteMyOrder(c *gin.Context) {
+	userID := c.GetInt("user_id")
+	orderID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid order ID"})
+		return
+	}
+
+	db := database.GetDB()
+
+	// Verify ownership
+	var ownerID int
+	err = db.QueryRow("SELECT broker_id FROM orders WHERE id = ?", orderID).Scan(&ownerID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		return
+	}
+
+	if ownerID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You can only delete your own orders"})
+		return
+	}
+
+	_, err = db.Exec("DELETE FROM orders WHERE id = ?", orderID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete order"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Order deleted successfully"})
 }
 
 // GetBrokerStats (Super Admin only) returns statistics for each broker

@@ -38,7 +38,7 @@ func GenerateToken(userID int, username string, isSuperAdmin bool) (string, erro
 		"user_id":        userID,
 		"username":       username,
 		"is_super_admin": isSuperAdmin,
-		"exp":            time.Now().Add(time.Hour * 72).Unix(),
+		"exp":            time.Now().Add(time.Hour * 24 * 30).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

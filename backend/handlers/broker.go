@@ -17,9 +17,12 @@ func GetAllBrokers(c *gin.Context) {
 	rows, err := db.Query(`
 		SELECT u.id, u.username, u.is_super_admin, u.created_at,
 		       bp.id, bp.user_id, bp.name, bp.bio, bp.mission_statement, 
-		       bp.testimonials, bp.profile_picture, bp.created_at, bp.updated_at
+		       bp.testimonials, bp.profile_picture, bp.created_at, bp.updated_at,
+		       ac.propaganda_content,
+		       (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE broker_id = u.id) as total_sold
 		FROM users u
 		LEFT JOIN broker_profiles bp ON u.id = bp.user_id
+		LEFT JOIN ai_cache ac ON u.id = ac.broker_id
 		WHERE u.is_super_admin = 0
 	`)
 	if err != nil {
@@ -28,9 +31,16 @@ func GetAllBrokers(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	var brokers []models.BrokerWithProfile
+	// Define a struct that includes propaganda
+	type BrokerWithPropaganda struct {
+		models.BrokerWithProfile
+		Propaganda string `json:"propaganda"`
+		TotalSold  int    `json:"total_sold"`
+	}
+
+	var brokers []BrokerWithPropaganda
 	for rows.Next() {
-		var broker models.BrokerWithProfile
+		var broker BrokerWithPropaganda
 		var profile models.BrokerProfile
 		var profileID sql.NullInt64
 		var profileUserID sql.NullInt64
@@ -41,11 +51,14 @@ func GetAllBrokers(c *gin.Context) {
 		var profilePicture sql.NullString
 		var profileCreatedAt sql.NullTime
 		var profileUpdatedAt sql.NullTime
+		var propagandaContent sql.NullString
+		var totalSold int
 
 		err := rows.Scan(
 			&broker.ID, &broker.Username, &broker.IsSuperAdmin, &broker.CreatedAt,
 			&profileID, &profileUserID, &profileName, &profileBio, &profileMission,
 			&profileTestimonials, &profilePicture, &profileCreatedAt, &profileUpdatedAt,
+			&propagandaContent, &totalSold,
 		)
 		if err != nil {
 			continue
@@ -64,6 +77,8 @@ func GetAllBrokers(c *gin.Context) {
 			broker.Profile = &profile
 		}
 
+		broker.Propaganda = propagandaContent.String
+		broker.TotalSold = totalSold
 		brokers = append(brokers, broker)
 	}
 
@@ -80,14 +95,16 @@ func GetBrokerProfile(c *gin.Context) {
 
 	db := database.GetDB()
 	var profile models.BrokerProfile
+	var bio, missionStatement, testimonials, profilePicture sql.NullString
+
 	err = db.QueryRow(`
 		SELECT id, user_id, name, bio, mission_statement, testimonials, 
 		       profile_picture, created_at, updated_at
 		FROM broker_profiles
 		WHERE user_id = ?
 	`, brokerID).Scan(
-		&profile.ID, &profile.UserID, &profile.Name, &profile.Bio,
-		&profile.MissionStatement, &profile.Testimonials, &profile.ProfilePicture,
+		&profile.ID, &profile.UserID, &profile.Name, &bio,
+		&missionStatement, &testimonials, &profilePicture,
 		&profile.CreatedAt, &profile.UpdatedAt,
 	)
 
@@ -99,6 +116,11 @@ func GetBrokerProfile(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 		return
 	}
+
+	profile.Bio = bio.String
+	profile.MissionStatement = missionStatement.String
+	profile.Testimonials = testimonials.String
+	profile.ProfilePicture = profilePicture.String
 
 	c.JSON(http.StatusOK, profile)
 }
@@ -109,14 +131,16 @@ func GetMyProfile(c *gin.Context) {
 
 	db := database.GetDB()
 	var profile models.BrokerProfile
+	var bio, missionStatement, testimonials, profilePicture sql.NullString
+
 	err := db.QueryRow(`
 		SELECT id, user_id, name, bio, mission_statement, testimonials, 
 		       profile_picture, created_at, updated_at
 		FROM broker_profiles
 		WHERE user_id = ?
 	`, userID).Scan(
-		&profile.ID, &profile.UserID, &profile.Name, &profile.Bio,
-		&profile.MissionStatement, &profile.Testimonials, &profile.ProfilePicture,
+		&profile.ID, &profile.UserID, &profile.Name, &bio,
+		&missionStatement, &testimonials, &profilePicture,
 		&profile.CreatedAt, &profile.UpdatedAt,
 	)
 
@@ -128,6 +152,11 @@ func GetMyProfile(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 		return
 	}
+
+	profile.Bio = bio.String
+	profile.MissionStatement = missionStatement.String
+	profile.Testimonials = testimonials.String
+	profile.ProfilePicture = profilePicture.String
 
 	c.JSON(http.StatusOK, profile)
 }
@@ -155,6 +184,24 @@ func UpdateMyProfile(c *gin.Context) {
 		return
 	}
 
+	// Re-run anti-propaganda
+	propaganda, err := ai.GeneratePropaganda(userID, req.Bio, req.MissionStatement, req.Testimonials)
+	if err == nil {
+		// Cache the result
+		// Check if cache exists
+		var exists bool
+		err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM ai_cache WHERE broker_id = ?)", userID).Scan(&exists)
+		if err == nil {
+			if exists {
+				_, _ = db.Exec("UPDATE ai_cache SET propaganda_content = ?, created_at = CURRENT_TIMESTAMP WHERE broker_id = ?", propaganda, userID)
+			} else {
+				// We need a bio_hash, but for now let's just use a placeholder or empty string as it seems unused in the logic provided so far
+				// Or better, calculate a simple hash
+				_, _ = db.Exec("INSERT INTO ai_cache (broker_id, propaganda_content, bio_hash) VALUES (?, ?, ?)", userID, propaganda, "updated_hash")
+			}
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Profile updated successfully"})
 }
 
@@ -163,7 +210,7 @@ func GetMyPropaganda(c *gin.Context) {
 	userID := c.GetInt("user_id")
 
 	db := database.GetDB()
-	var bio, missionStatement, testimonials string
+	var bio, missionStatement, testimonials sql.NullString
 	err := db.QueryRow(`
 		SELECT bio, mission_statement, testimonials
 		FROM broker_profiles
@@ -175,7 +222,7 @@ func GetMyPropaganda(c *gin.Context) {
 		return
 	}
 
-	propaganda, err := ai.GeneratePropaganda(userID, bio, missionStatement, testimonials)
+	propaganda, err := ai.GeneratePropaganda(userID, bio.String, missionStatement.String, testimonials.String)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate propaganda"})
 		return

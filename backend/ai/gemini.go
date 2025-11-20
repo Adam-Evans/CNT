@@ -49,11 +49,22 @@ func GeneratePropaganda(brokerID int, bio, missionStatement, testimonials string
 
 	// Generate new propaganda
 	ctx := context.Background()
-	model := geminiClient.GenerativeModel("gemini-1.5-flash")
+	model := geminiClient.GenerativeModel("gemini-flash-latest")
 
 	prompt := fmt.Sprintf(`You are a satirical campaign manager creating humorous "opposite day" propaganda. 
-Given the following broker profile, create a funny, tongue-in-cheek "anti-propaganda" message that playfully twists their own words against them. 
-Keep it lighthearted and funny, not mean-spirited. Maximum 3-4 sentences.
+Given the following broker profile, create a funny, tongue-in-cheek "anti-propaganda" message that twists their own words against them
+What we essentially want is to flip their own words against them, they claim to be reliable? Untrusthworth! Great service? Terrible service 0/10 etc.
+ Try to mimic the styling and length of each input section. Do not aknowledge that this is satire,
+  just present the propaganda as fact as a direct replacement for the content. Form sections appropriately as 
+  Official Broker Profile: \r\n Bio: ... Mission Statement: ... Testimonials: ...(keep sections and titles exactly at this reads)
+  Bio, mission statement and testimonials, using html and inline styling, make it nice and modern/clean looking, 
+  for testimonials: background-color: #ffffff; padding: 15px; border-left: 5px solid #d9534f; margin-bottom: 10px;
+  for bio and mission statement and testimonial titles: border-bottom: 2px solid #d9534f; padding-bottom: 5px; color: #d9534f;
+  for text content in bio and mission statement: font-size: 16px; line-height: 1.6; color: #333;
+  Separarate the Official Broker Profile title from the rest of the div as a standard title outside the main wrapper div,
+  profile wrapper div: font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 20px auto; border: 1px solid #e0e0e0; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); background-color: #f9f9f9;
+   
+  Make sure the title of the profile is nice and plain, standard title, simply use the words "Official Broker Profile", no more no less. 
 
 Bio: %s
 Mission Statement: %s

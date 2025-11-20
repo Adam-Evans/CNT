@@ -42,7 +42,8 @@ func UpdateConfig(c *gin.Context) {
 
 	if req.NuggetPrice != "" {
 		_, err := db.Exec(`
-			UPDATE config SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = 'nugget_price'
+			INSERT INTO config (key, value, updated_at) VALUES ('nugget_price', ?, CURRENT_TIMESTAMP)
+			ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
 		`, req.NuggetPrice)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update nugget price"})
@@ -52,10 +53,22 @@ func UpdateConfig(c *gin.Context) {
 
 	if req.EventEndDate != "" {
 		_, err := db.Exec(`
-			UPDATE config SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = 'event_end_date'
+			INSERT INTO config (key, value, updated_at) VALUES ('event_end_date', ?, CURRENT_TIMESTAMP)
+			ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
 		`, req.EventEndDate)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update event end date"})
+			return
+		}
+	}
+
+	if req.OrdersClosingDate != "" {
+		_, err := db.Exec(`
+			INSERT INTO config (key, value, updated_at) VALUES ('orders_closing_date', ?, CURRENT_TIMESTAMP)
+			ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+		`, req.OrdersClosingDate)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update orders closing date"})
 			return
 		}
 	}

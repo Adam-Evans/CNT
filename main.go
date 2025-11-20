@@ -9,9 +9,15 @@ import (
 	"github.com/Adam-Evans/CNT/backend/handlers"
 	"github.com/Adam-Evans/CNT/backend/middleware"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found")
+	}
+
 	// Initialize database
 	dbPath := database.GetDatabasePath()
 	if err := database.InitDB(dbPath); err != nil {
@@ -55,6 +61,8 @@ func main() {
 		auth.PUT("/my/profile", handlers.UpdateMyProfile)
 		auth.GET("/my/propaganda", handlers.GetMyPropaganda)
 		auth.GET("/my/orders", handlers.GetMyOrders)
+		auth.PUT("/my/orders/:id", handlers.UpdateMyOrder)
+		auth.DELETE("/my/orders/:id", handlers.DeleteMyOrder)
 	}
 
 	// Super admin routes
@@ -66,6 +74,7 @@ func main() {
 		admin.GET("/stats", handlers.GetBrokerStats)
 		admin.PUT("/config", handlers.UpdateConfig)
 		admin.PUT("/brokers/:id", handlers.UpdateBrokerProfile)
+		admin.POST("/invites", handlers.GenerateInvite)
 	}
 
 	// Serve static files (React app)

@@ -49,6 +49,17 @@ CREATE TABLE IF NOT EXISTS ai_cache (
     FOREIGN KEY (broker_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Registration Invites
+CREATE TABLE IF NOT EXISTS registration_invites (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT UNIQUE NOT NULL,
+    is_used BOOLEAN DEFAULT 0,
+    expires_at DATETIME NOT NULL,
+    created_by INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(id)
+);
+
 -- Insert default config values
 INSERT OR IGNORE INTO config (key, value) VALUES 
     ('nugget_price', '5.00'),

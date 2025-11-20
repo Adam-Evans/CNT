@@ -39,10 +39,10 @@ type Config struct {
 }
 
 type AICache struct {
-	BrokerID           int       `json:"broker_id" db:"broker_id"`
-	PropagandaContent  string    `json:"propaganda_content" db:"propaganda_content"`
-	BioHash            string    `json:"bio_hash" db:"bio_hash"`
-	CreatedAt          time.Time `json:"created_at" db:"created_at"`
+	BrokerID          int       `json:"broker_id" db:"broker_id"`
+	PropagandaContent string    `json:"propaganda_content" db:"propaganda_content"`
+	BioHash           string    `json:"bio_hash" db:"bio_hash"`
+	CreatedAt         time.Time `json:"created_at" db:"created_at"`
 }
 
 // Request/Response DTOs
@@ -71,8 +71,9 @@ type OrderRequest struct {
 }
 
 type ConfigUpdate struct {
-	NuggetPrice   string `json:"nugget_price"`
-	EventEndDate  string `json:"event_end_date"`
+	NuggetPrice       string `json:"nugget_price"`
+	EventEndDate      string `json:"event_end_date"`
+	OrdersClosingDate string `json:"orders_closing_date"`
 }
 
 type BrokerWithProfile struct {

@@ -18,7 +18,7 @@ api.interceptors.request.use((config) => {
 // Auth API
 export const authAPI = {
   login: (username, password) => api.post('/auth/login', { username, password }),
-  register: (username, password) => api.post('/auth/register', { username, password }),
+  register: (username, password, inviteCode) => api.post('/auth/register', { username, password, invite_code: inviteCode }),
   getCurrentUser: () => api.get('/auth/me'),
 };
 
@@ -35,6 +35,8 @@ export const brokerAPI = {
 export const orderAPI = {
   createOrder: (data) => api.post('/orders', data),
   getMyOrders: () => api.get('/my/orders'),
+  updateMyOrder: (id, data) => api.put(`/my/orders/${id}`, data),
+  deleteMyOrder: (id) => api.delete(`/my/orders/${id}`),
 };
 
 // Admin API
@@ -44,6 +46,7 @@ export const adminAPI = {
   getBrokerStats: () => api.get('/admin/stats'),
   updateConfig: (data) => api.put('/admin/config', data),
   updateBrokerProfile: (id, data) => api.put(`/admin/brokers/${id}`, data),
+  generateInvite: () => api.post('/admin/invites'),
 };
 
 // Config API

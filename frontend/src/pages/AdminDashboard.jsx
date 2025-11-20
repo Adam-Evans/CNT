@@ -7,8 +7,10 @@ const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const [stats, setStats] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [config, setConfig] = useState({ nugget_price: '5.00', event_end_date: '' });
+  const [config, setConfig] = useState({ nugget_price: '5.00', event_end_date: '', orders_closing_date: '' });
   const [editing, setEditing] = useState(false);
+  const [inviteCode, setInviteCode] = useState(null);
+  const [inviteExpiry, setInviteExpiry] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,6 +47,7 @@ const AdminDashboard = () => {
       setConfig({
         nugget_price: response.data.nugget_price || '5.00',
         event_end_date: response.data.event_end_date || '',
+        orders_closing_date: response.data.orders_closing_date || '',
       });
     } catch (error) {
       console.error('Failed to load config:', error);
@@ -71,6 +74,16 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleGenerateInvite = async () => {
+    try {
+      const response = await adminAPI.generateInvite();
+      setInviteCode(response.data.code);
+      setInviteExpiry(new Date(response.data.expires_at).toLocaleTimeString());
+    } catch (error) {
+      alert('Failed to generate invite');
+    }
+  };
+
   const totalOrders = orders.length;
   const totalRevenue = orders.reduce((sum, order) => sum + order.cost, 0);
   const paidRevenue = orders.filter(o => o.is_paid).reduce((sum, order) => sum + order.cost, 0);
@@ -93,165 +106,180 @@ const AdminDashboard = () => {
       </nav>
 
       <div className="container mx-auto px-4 py-8">
+        
+        {/* Invite Generator */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8 border-l-4 border-purple-500">
+          <h2 className="text-2xl font-bold mb-4">Broker Invitations</h2>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleGenerateInvite}
+              className="bg-purple-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-purple-700 transition-colors"
+            >
+              Generate One-Time Invite Link
+            </button>
+            {inviteCode && (
+              <div className="bg-purple-50 border border-purple-200 p-3 rounded-lg flex items-center gap-4">
+                <div>
+                  <span className="text-sm text-gray-500 block">Invite Code:</span>
+                  <code className="text-lg font-mono font-bold text-purple-800 select-all">{inviteCode}</code>
+                </div>
+                <div className="border-l border-purple-200 pl-4">
+                  <span className="text-sm text-gray-500 block">Expires at:</span>
+                  <span className="font-medium">{inviteExpiry}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Configuration Section */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">System Configuration</h2>
             <button
-              onClick={() => setEditing(!editing)}
-              className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600"
+              onClick={() => editing ? handleSaveConfig() : setEditing(true)}
+              className={`px-6 py-2 rounded-lg font-bold ${
+                editing 
+                  ? 'bg-green-500 text-white hover:bg-green-600' 
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+              }`}
             >
-              {editing ? 'Cancel' : 'Edit'}
+              {editing ? 'Save Changes' : 'Edit Config'}
             </button>
           </div>
-
-          {editing ? (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nugget Price (per 20-pack)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={config.nugget_price}
-                  onChange={(e) => setConfig({ ...config, nugget_price: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Event End Date
-                </label>
-                <input
-                  type="datetime-local"
-                  value={config.event_end_date ? new Date(config.event_end_date).toISOString().slice(0, 16) : ''}
-                  onChange={(e) => setConfig({ ...config, event_end_date: new Date(e.target.value).toISOString() })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-
-              <button
-                onClick={handleSaveConfig}
-                className="w-full bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600"
-              >
-                Save Configuration
-              </button>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nugget Price (£)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                disabled={!editing}
+                value={config.nugget_price}
+                onChange={(e) => setConfig({...config, nugget_price: e.target.value})}
+                className="w-full px-4 py-2 border rounded-lg disabled:bg-gray-100"
+              />
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-green-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600">Nugget Price</p>
-                <p className="text-2xl font-bold text-green-600">${config.nugget_price}</p>
-              </div>
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600">Event End Date</p>
-                <p className="text-lg font-bold text-blue-600">
-                  {config.event_end_date ? new Date(config.event_end_date).toLocaleString() : 'Not set'}
-                </p>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Orders Closing Date
+              </label>
+              <input
+                type="datetime-local"
+                disabled={!editing}
+                value={config.orders_closing_date}
+                onChange={(e) => setConfig({...config, orders_closing_date: e.target.value})}
+                className="w-full px-4 py-2 border rounded-lg disabled:bg-gray-100"
+              />
             </div>
-          )}
-        </div>
-
-        {/* Overall Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-sm text-gray-600">Total Orders</p>
-            <p className="text-3xl font-bold text-blue-600">{totalOrders}</p>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Event End Date (Final Scores)
+              </label>
+              <input
+                type="datetime-local"
+                disabled={!editing}
+                value={config.event_end_date}
+                onChange={(e) => setConfig({...config, event_end_date: e.target.value})}
+                className="w-full px-4 py-2 border rounded-lg disabled:bg-gray-100"
+              />
+            </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-sm text-gray-600">Total Revenue</p>
-            <p className="text-3xl font-bold text-green-600">${totalRevenue.toFixed(2)}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-sm text-gray-600">Paid Revenue</p>
-            <p className="text-3xl font-bold text-purple-600">${paidRevenue.toFixed(2)}</p>
+          
+          <div className="mt-6 pt-6 border-t">
+            <button
+              onClick={() => window.open('/?preview=scores', '_blank')}
+              className="bg-amber-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-amber-600 transition-colors"
+            >
+              Preview Final Scores Page
+            </button>
           </div>
         </div>
 
-        {/* Broker Stats */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <h2 className="text-2xl font-bold mb-6">Broker Leaderboard</h2>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h3 className="text-gray-500 font-medium mb-2">Total Orders</h3>
+            <p className="text-4xl font-bold text-blue-600">{totalOrders}</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h3 className="text-gray-500 font-medium mb-2">Total Revenue</h3>
+            <p className="text-4xl font-bold text-green-600">£{totalRevenue.toFixed(2)}</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h3 className="text-gray-500 font-medium mb-2">Paid Revenue</h3>
+            <p className="text-4xl font-bold text-purple-600">£{paidRevenue.toFixed(2)}</p>
+          </div>
+        </div>
+
+        {/* Orders Table */}
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="p-6 border-b">
+            <h2 className="text-2xl font-bold">Recent Orders</h2>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-2 text-left">Rank</th>
-                  <th className="px-4 py-2 text-left">Broker</th>
-                  <th className="px-4 py-2 text-left">Orders</th>
-                  <th className="px-4 py-2 text-left">Total Revenue</th>
-                  <th className="px-4 py-2 text-left">Paid Revenue</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Broker</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody>
-                {stats.map((stat, index) => (
-                  <tr key={stat.broker_id} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-2">
-                      <span className={`font-bold ${index === 0 ? 'text-yellow-500' : index === 1 ? 'text-gray-400' : index === 2 ? 'text-orange-600' : ''}`}>
-                        {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2">
-                      <div>
-                        <p className="font-semibold">{stat.name}</p>
-                        <p className="text-sm text-gray-600">@{stat.username}</p>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {orders.map((order) => (
+                  <tr key={order.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">#{order.id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap font-medium">{order.customer_name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {(() => {
+                        const broker = stats.find(s => s.broker_id === order.broker_id);
+                        return broker?.name || broker?.username || 'Unknown';
+                      })()}
+                      <div className="mt-1">
+                        <select
+                          className="text-xs border rounded px-2 py-1 mt-1"
+                          value={order.broker_id}
+                          onChange={async (e) => {
+                            const newBrokerId = parseInt(e.target.value);
+                            if (newBrokerId !== order.broker_id) {
+                              try {
+                                await adminAPI.updateOrder(order.id, { broker_id: newBrokerId });
+                                loadOrders();
+                              } catch (err) {
+                                alert('Failed to transfer order');
+                              }
+                            }
+                          }}
+                        >
+                          {stats.map(broker => (
+                            <option key={broker.broker_id} value={broker.broker_id}>
+                              {broker.name || broker.username}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </td>
-                    <td className="px-4 py-2">{stat.order_count}</td>
-                    <td className="px-4 py-2 font-semibold text-green-600">${stat.total_revenue.toFixed(2)}</td>
-                    <td className="px-4 py-2">${stat.paid_revenue.toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {stats.length === 0 && (
-              <p className="text-center text-gray-500 py-8">No brokers yet</p>
-            )}
-          </div>
-        </div>
-
-        {/* All Orders */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-2xl font-bold mb-6">All Orders</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 text-left">ID</th>
-                  <th className="px-4 py-2 text-left">Customer</th>
-                  <th className="px-4 py-2 text-left">Broker</th>
-                  <th className="px-4 py-2 text-left">Quantity</th>
-                  <th className="px-4 py-2 text-left">Cost</th>
-                  <th className="px-4 py-2 text-left">Status</th>
-                  <th className="px-4 py-2 text-left">Date</th>
-                  <th className="px-4 py-2 text-left">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => (
-                  <tr key={order.id} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-2">#{order.id}</td>
-                    <td className="px-4 py-2">{order.customer_name}</td>
-                    <td className="px-4 py-2">@{order.broker_username}</td>
-                    <td className="px-4 py-2">{order.quantity}</td>
-                    <td className="px-4 py-2">${order.cost.toFixed(2)}</td>
-                    <td className="px-4 py-2">
-                      <span className={`px-2 py-1 rounded text-sm ${order.is_paid ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                        {order.is_paid ? 'Paid' : 'Pending'}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.quantity}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">£{order.cost.toFixed(2)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        order.is_paid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {order.is_paid ? 'Paid' : 'Unpaid'}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-600">
-                      {new Date(order.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-2">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
                         onClick={() => handleTogglePaid(order.id, order.is_paid)}
-                        className={`px-3 py-1 rounded text-sm font-semibold ${
-                          order.is_paid
-                            ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                            : 'bg-green-100 text-green-800 hover:bg-green-200'
+                        className={`text-indigo-600 hover:text-indigo-900 ${
+                          order.is_paid ? 'opacity-50' : ''
                         }`}
                       >
                         {order.is_paid ? 'Mark Unpaid' : 'Mark Paid'}
@@ -261,9 +289,6 @@ const AdminDashboard = () => {
                 ))}
               </tbody>
             </table>
-            {orders.length === 0 && (
-              <p className="text-center text-gray-500 py-8">No orders yet</p>
-            )}
           </div>
         </div>
       </div>
