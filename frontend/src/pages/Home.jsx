@@ -6,6 +6,7 @@ import EulaPopup from '../components/EulaPopup';
 import { useAuth } from '../context/AuthContext';
 import heroImage from '../assets/nuggets-hero.webp';
 import ceremonyImage from '../assets/nuggets-ceremony.webp';
+import ceoImage from '../assets/rick of thrones.webp';
 
 const Toast = ({ message }) => (
   <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
@@ -261,6 +262,22 @@ const Home = () => {
           </div>
         ) : (
           <div className="max-w-7xl mx-auto">
+            {/* Intro Message + Image */}
+            <div className="flex flex-col md:flex-row items-center gap-8 bg-white rounded-2xl shadow-xl p-8 mb-8">
+              <div className="flex-1">
+                <h2 className="text-3xl font-bold text-gray-800 mb-4">Well, here we are sports fans!</h2>
+                <p className="text-lg text-gray-700 mb-4">
+                  Winter is coming and Auto-Trail goes chicken nugget nutty. Never in my professional career have I seen such a thirst for poor quality, over processed meat, long may it continue!!!<br/><br/>
+                  The festive season is a time where we cherish what we have, appreciate our loved ones, give to charity, and butcher some poultry. When I first joined Auto-Trail the concept was very alien to me but knowing what I know now it’s very much an SOP of the business. As acting CEO is Mr. Spencer’s timely absence down under I empower all of you to get involved, order some nuggs and chow down with us on Tuesday 9th December. We must all come together to fuel this annual tradition and attempt to beat the previous year’s count. Using my fiscal contacts, I’ve managed to convince Mrs Reeves to hold off on the proposed tax rises for fast food so make hay while the sun shines and join the fun.<br/><br/>
+                  <span className="font-bold text-amber-700 text-xl block mt-4">VIVA LA NUGGET!</span>
+                  <span className="block mt-2 text-gray-500 italic">Dicky Tinds - CEO</span>
+                </p>
+              </div>
+              <div className="flex-1 flex justify-center">
+                  <img src={ceoImage} alt="Rick of Thrones" className="rounded-xl shadow-2xl w-full max-w-xs md:max-w-sm object-cover" />
+              </div>
+            </div>
+            {/* Broker Grid */}
             <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
               <h2 className="text-3xl font-bold text-gray-800 text-center mb-8">
                 Select Your Nugget Broker
