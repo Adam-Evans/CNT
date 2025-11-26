@@ -7,7 +7,7 @@ const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const [stats, setStats] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [config, setConfig] = useState({ nugget_price: '5.00', event_end_date: '', orders_closing_date: '' });
+  const [config, setConfig] = useState({ nugget_price: '5.00', event_end_date: '', orders_closing_date: '', show_ai_content: 'false' });
   const [editing, setEditing] = useState(false);
   const [inviteCode, setInviteCode] = useState(null);
   const [inviteExpiry, setInviteExpiry] = useState(null);
@@ -48,6 +48,7 @@ const AdminDashboard = () => {
         nugget_price: response.data.nugget_price || '5.00',
         event_end_date: response.data.event_end_date || '',
         orders_closing_date: response.data.orders_closing_date || '',
+        show_ai_content: response.data.show_ai_content || 'false',
       });
     } catch (error) {
       console.error('Failed to load config:', error);
@@ -71,6 +72,17 @@ const AdminDashboard = () => {
       loadStats();
     } catch (error) {
       alert(error.response?.data?.error || 'Failed to update order');
+    }
+  };
+
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm('Are you sure you want to delete this order? This cannot be undone.')) return;
+    try {
+      await adminAPI.deleteOrder(orderId);
+      loadOrders();
+      loadStats();
+    } catch (error) {
+      alert(error.response?.data?.error || 'Failed to delete order');
     }
   };
 
@@ -196,6 +208,32 @@ const AdminDashboard = () => {
               Preview Final Scores Page
             </button>
           </div>
+
+          {editing && (
+            <div className="mt-6 pt-6 border-t">
+              <h3 className="text-gray-500 font-medium mb-2">Current Configuration</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <h3 className="text-gray-500 font-medium">Nugget Price</h3>
+                  <p className="text-xl font-bold">£{config.nugget_price}</p>
+                </div>
+                <div>
+                  <h3 className="text-gray-500 font-medium">Event End Date</h3>
+                  <p className="text-xl font-bold">{config.event_end_date ? new Date(config.event_end_date).toLocaleString() : 'Not set'}</p>
+                </div>
+                <div>
+                  <h3 className="text-gray-500 font-medium">Orders Close</h3>
+                  <p className="text-xl font-bold">{config.orders_closing_date ? new Date(config.orders_closing_date).toLocaleString() : 'Not set'}</p>
+                </div>
+                <div>
+                  <h3 className="text-gray-500 font-medium">AI Content</h3>
+                  <p className={`text-xl font-bold ${config.show_ai_content === 'true' ? 'text-green-600' : 'text-gray-600'}`}>
+                    {config.show_ai_content === 'true' ? 'Enabled' : 'Disabled'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Stats Cards */}
@@ -278,11 +316,17 @@ const AdminDashboard = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
                         onClick={() => handleTogglePaid(order.id, order.is_paid)}
-                        className={`text-indigo-600 hover:text-indigo-900 ${
+                        className={`text-indigo-600 hover:text-indigo-900 mr-4 ${
                           order.is_paid ? 'opacity-50' : ''
                         }`}
                       >
                         {order.is_paid ? 'Mark Unpaid' : 'Mark Paid'}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteOrder(order.id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
                       </button>
                     </td>
                   </tr>

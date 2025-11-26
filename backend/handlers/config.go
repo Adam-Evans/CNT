@@ -73,5 +73,16 @@ func UpdateConfig(c *gin.Context) {
 		}
 	}
 
+	if req.ShowAIContent != "" {
+		_, err := db.Exec(`
+			INSERT INTO config (key, value, updated_at) VALUES ('show_ai_content', ?, CURRENT_TIMESTAMP)
+			ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+		`, req.ShowAIContent)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update show ai content setting"})
+			return
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Configuration updated successfully"})
 }

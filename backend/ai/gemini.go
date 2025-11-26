@@ -52,25 +52,36 @@ func GeneratePropaganda(brokerID int, bio, missionStatement, testimonials string
 	model := geminiClient.GenerativeModel("gemini-flash-latest")
 
 	prompt := fmt.Sprintf(`You are a satirical campaign manager creating humorous "opposite day" propaganda. 
-Given the following broker profile, create a funny, tongue-in-cheek "anti-propaganda" message that twists their own words against them
-What we essentially want is to flip their own words against them, they claim to be reliable? Untrusthworth! Great service? Terrible service 0/10 etc.
- Try to mimic the styling and length of each input section. Do not aknowledge that this is satire,
-  just present the propaganda as fact as a direct replacement for the content. Form sections appropriately as 
-  Official Broker Profile: \r\n Bio: ... Mission Statement: ... Testimonials: ...(keep sections and titles exactly at this reads)
-  Bio, mission statement and testimonials, using html and inline styling, make it nice and modern/clean looking, 
-  for testimonials: background-color: #ffffff; padding: 15px; border-left: 5px solid #d9534f; margin-bottom: 10px;
-  for bio and mission statement and testimonial titles: border-bottom: 2px solid #d9534f; padding-bottom: 5px; color: #d9534f;
-  for text content in bio and mission statement: font-size: 16px; line-height: 1.6; color: #333;
-  Separarate the Official Broker Profile title from the rest of the div as a standard title outside the main wrapper div,
-  profile wrapper div: font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 20px auto; border: 1px solid #e0e0e0; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); background-color: #f9f9f9;
-   
-  Make sure the title of the profile is nice and plain, standard title, simply use the words "Official Broker Profile", no more no less. 
+Given the following broker profile, create a funny, tongue-in-cheek "anti-propaganda" message that twists their own words against them.
+What we essentially want is to flip their own words against them. They claim to be reliable? Untrustworthy! Great service? Terrible service 0/10 etc.
+Do not acknowledge that this is satire, just present the propaganda as fact as a direct replacement for the content.
 
+Structure the output using HTML with inline styles to match the following layout exactly (mimicking the user's real profile style but with twisted content):
+
+1. **Mission Statement Section**:
+   - Container: background-color: white; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); border: 1px solid #fef3c7; margin-bottom: 1rem;
+   - Title ("Mission Statement"): font-weight: bold; color: #92400e; margin-bottom: 0.25rem; font-family: sans-serif; display: block;
+   - Content: font-style: italic; color: #4b5563; display: block;
+
+2. **About Section** (Bio):
+   - Container: background-color: white; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); border: 1px solid #fef3c7; margin-bottom: 1rem;
+   - Title ("About"): font-weight: bold; color: #92400e; margin-bottom: 0.25rem; font-family: sans-serif; display: block;
+   - Content: color: #4b5563; line-height: 1.5; display: block;
+
+3. **Testimonials Section**:
+   - Container: background-color: #fef3c7; padding: 1rem; border-radius: 0.5rem; border: 1px solid #fde68a;
+   - Title ("Testimonials"): font-weight: bold; color: #78350f; margin-bottom: 0.5rem; font-family: sans-serif; display: block;
+   - Content: Generate 2-3 fake negative/sarcastic testimonials.
+   - Each Testimonial Item: display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: flex-start;
+   - Quote Icon: content "❝"; color: #f59e0b; font-size: 1.2em; line-height: 1;
+   - Text: font-style: italic; color: #78350f;
+
+Input Data:
 Bio: %s
 Mission Statement: %s
 Testimonials: %s
 
-Generate the anti-propaganda:`, bio, missionStatement, testimonials)
+Generate the HTML now, starting with the Mission Statement div. Do not include markdown code blocks or html tags.`, bio, missionStatement, testimonials)
 
 	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
 	if err != nil {

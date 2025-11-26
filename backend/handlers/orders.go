@@ -259,6 +259,20 @@ func DeleteMyOrder(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Order deleted successfully"})
 }
 
+// DeleteOrder (Super Admin only) deletes any order
+func DeleteOrder(c *gin.Context) {
+	orderID := c.Param("id")
+	db := database.GetDB()
+
+	_, err := db.Exec("DELETE FROM orders WHERE id = ?", orderID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete order"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Order deleted successfully"})
+}
+
 // GetBrokerStats (Super Admin only) returns statistics for each broker
 func GetBrokerStats(c *gin.Context) {
 	db := database.GetDB()
@@ -266,13 +280,14 @@ func GetBrokerStats(c *gin.Context) {
 		SELECT u.id, u.username, bp.name,
 		       COUNT(o.id) as order_count,
 		       COALESCE(SUM(o.cost), 0) as total_revenue,
-		       COALESCE(SUM(CASE WHEN o.is_paid = 1 THEN o.cost ELSE 0 END), 0) as paid_revenue
+		       COALESCE(SUM(CASE WHEN o.is_paid = 1 THEN o.cost ELSE 0 END), 0) as paid_revenue,
+		       COALESCE(SUM(CASE WHEN o.is_paid = 1 THEN o.quantity ELSE 0 END), 0) as paid_nuggets
 		FROM users u
 		LEFT JOIN broker_profiles bp ON u.id = bp.user_id
 		LEFT JOIN orders o ON u.id = o.broker_id
 		WHERE u.is_super_admin = 0
 		GROUP BY u.id, u.username, bp.name
-		ORDER BY total_revenue DESC
+		ORDER BY paid_nuggets DESC
 	`)
 
 	if err != nil {
@@ -288,6 +303,7 @@ func GetBrokerStats(c *gin.Context) {
 		OrderCount   int     `json:"order_count"`
 		TotalRevenue float64 `json:"total_revenue"`
 		PaidRevenue  float64 `json:"paid_revenue"`
+		PaidNuggets  int     `json:"total_sold"` // Mapping to total_sold for frontend compatibility
 	}
 
 	var stats []BrokerStats
@@ -296,7 +312,7 @@ func GetBrokerStats(c *gin.Context) {
 		var name sql.NullString
 		err := rows.Scan(
 			&stat.BrokerID, &stat.Username, &name,
-			&stat.OrderCount, &stat.TotalRevenue, &stat.PaidRevenue,
+			&stat.OrderCount, &stat.TotalRevenue, &stat.PaidRevenue, &stat.PaidNuggets,
 		)
 		if err != nil {
 			continue

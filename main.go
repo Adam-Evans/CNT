@@ -89,6 +89,7 @@ func main() {
 	{
 		admin.GET("/orders", handlers.GetAllOrders)
 		admin.PUT("/orders/:id", handlers.UpdateOrder)
+		admin.DELETE("/orders/:id", handlers.DeleteOrder)
 		admin.GET("/stats", handlers.GetBrokerStats)
 		admin.PUT("/config", handlers.UpdateConfig)
 		admin.PUT("/brokers/:id", handlers.UpdateBrokerProfile)

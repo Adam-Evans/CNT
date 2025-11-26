@@ -43,6 +43,7 @@ export const orderAPI = {
 export const adminAPI = {
   getAllOrders: () => api.get('/admin/orders'),
   updateOrder: (id, data) => api.put(`/admin/orders/${id}`, data),
+  deleteOrder: (id) => api.delete(`/admin/orders/${id}`),
   getBrokerStats: () => api.get('/admin/stats'),
   updateConfig: (data) => api.put('/admin/config', data),
   updateBrokerProfile: (id, data) => api.put(`/admin/brokers/${id}`, data),

@@ -74,6 +74,7 @@ type ConfigUpdate struct {
 	NuggetPrice       string `json:"nugget_price"`
 	EventEndDate      string `json:"event_end_date"`
 	OrdersClosingDate string `json:"orders_closing_date"`
+	ShowAIContent     string `json:"show_ai_content"`
 }
 
 type BrokerWithProfile struct {

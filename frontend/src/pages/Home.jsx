@@ -146,6 +146,7 @@ const Home = () => {
   const [loading, setLoading] = useState(false);
   const [showEula, setShowEula] = useState(true);
   const [toastMessage, setToastMessage] = useState(null);
+  const [showAIContent, setShowAIContent] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
@@ -175,6 +176,9 @@ const Home = () => {
       }
       if (response.data.orders_closing_date) {
         setOrdersClosingDate(new Date(response.data.orders_closing_date));
+      }
+      if (response.data.show_ai_content) {
+        setShowAIContent(response.data.show_ai_content === 'true');
       }
     } catch (error) {
       console.error('Failed to load config:', error);
@@ -255,133 +259,147 @@ const Home = () => {
           <div className="max-w-4xl mx-auto">
              {eventEndDate && <Countdown targetDate={eventEndDate} />}
           </div>
-        ) : !selectedBroker ? (
-          <div className="max-w-9xl mx-auto">
+        ) : (
+          <div className="max-w-7xl mx-auto">
             <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
               <h2 className="text-3xl font-bold text-gray-800 text-center mb-8">
                 Select Your Nugget Broker
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {brokers.map((broker) => (
-                  <div
-                    key={broker.id}
-                    onClick={() => setSelectedBroker(broker)}
-                    className="group bg-amber-50 rounded-xl p-6 cursor-pointer hover:shadow-xl transition-all border-2 border-transparent hover:border-amber-400 transform hover:-translate-y-6 flex flex-col h-full"
-                  >
-                    <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-amber-200 flex items-center justify-center text-4xl shadow-inner overflow-hidden">
-                      {broker.profile?.profile_picture ? (
-                        <img
-                          src={broker.profile.profile_picture}
-                          alt={broker.username}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        '👔'
-                      )}
-                    </div>
-                    <h3 className="text-xl font-bold text-center text-gray-800 mb-2">
-                      {broker.profile?.name || broker.username}
-                    </h3>
-                    
-                    <div className="flex-grow">
-                      {user && !user.is_super_admin ? (
-                        // Logged in broker sees real info
-                        <div className="text-sm text-gray-600 space-y-2">
-                          <p className="italic">"{broker.profile?.mission_statement || 'No mission statement'}"</p>
-                          <p className="text-xs border-t pt-2">{broker.profile?.bio || 'No bio'}</p>
-                          {broker.profile?.testimonials && (
-                            <div className="mt-2 p-2 bg-amber-100 rounded text-amber-900 text-xs border border-amber-200">
-                              <span className="font-semibold">Testimonials:</span>
-                              <span className="block mt-1 whitespace-pre-line">
-                                {broker.profile.testimonials}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        // Public sees AI Propaganda
-                        <div className="text-sm text-gray-600">
-                          {broker.propaganda ? (
-                            <div 
-                              dangerouslySetInnerHTML={{ 
-                                __html: broker.propaganda.replace(/```html|```/g, '') 
-                              }} 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {brokers.map((broker) => {
+                  const isSelected = selectedBroker?.id === broker.id;
+                  return (
+                    <div
+                      key={broker.id}
+                      onClick={() => !isSelected && setSelectedBroker(broker)}
+                      className={`group bg-amber-50 rounded-xl p-6 cursor-pointer hover:shadow-xl transition-all border-2 ${isSelected ? 'border-amber-500 ring-4 ring-amber-200' : 'border-transparent hover:border-amber-400'} flex flex-col overflow-hidden relative`}
+                    >
+                      <div className="flex items-center gap-6 mb-4">
+                        <div className="w-24 h-24 flex-shrink-0 rounded-full bg-amber-200 flex items-center justify-center text-4xl shadow-inner overflow-hidden border-4 border-white">
+                          {broker.profile?.profile_picture ? (
+                            <img
+                              src={broker.profile.profile_picture}
+                              alt={broker.username}
+                              className="w-full h-full object-cover"
                             />
                           ) : (
-                            <p className="italic">
-                              {broker.profile?.mission_statement || "Ready to serve your nugget needs."}
-                            </p>
+                            '👔'
                           )}
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bold text-gray-800">
+                            {broker.profile?.name || broker.username}
+                          </h3>
+                          <p className="text-amber-600 font-medium">Nugget Broker</p>
+                        </div>
+                      </div>
+                      
+                      <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isSelected ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                        <div className="pt-4 border-t border-amber-200 space-y-4">
+                          {/* Content Logic: Show AI if enabled and user is NOT super admin (or logged out), otherwise show real profile */}
+                          {showAIContent && (!user || !user.is_super_admin) ? (
+                             // AI Content
+                             <div className="text-sm text-gray-600">
+                               {broker.propaganda ? (
+                                 <div 
+                                   dangerouslySetInnerHTML={{ 
+                                     __html: broker.propaganda.replace(/```html|```/g, '') 
+                                   }} 
+                                 />
+                               ) : (
+                                 <p className="italic text-center text-gray-400">AI Propaganda generating...</p>
+                               )}
+                             </div>
+                          ) : (
+                             // User Content
+                             <div className="text-sm text-gray-600 space-y-4">
+                               {broker.profile?.mission_statement && (
+                                 <div className="bg-white p-4 rounded-lg shadow-sm border border-amber-100">
+                                   <h4 className="font-bold text-amber-800 mb-1">Mission Statement</h4>
+                                   <p className="italic">"{broker.profile.mission_statement}"</p>
+                                 </div>
+                               )}
+                               
+                               {broker.profile?.bio && (
+                                 <div className="bg-white p-4 rounded-lg shadow-sm border border-amber-100">
+                                   <h4 className="font-bold text-amber-800 mb-1">About</h4>
+                                   <p>{broker.profile.bio}</p>
+                                 </div>
+                               )}
+
+                               {broker.profile?.testimonials && (
+                                 <div className="bg-amber-100 p-4 rounded-lg border border-amber-200">
+                                   <h4 className="font-bold text-amber-900 mb-2">Testimonials</h4>
+                                   <div className="space-y-2">
+                                     {broker.profile.testimonials.split(',').map((t, i) => (
+                                       t.trim() && (
+                                         <div key={i} className="flex gap-2">
+                                           <span className="text-amber-500">❝</span>
+                                           <p className="italic text-amber-900">{t.trim()}</p>
+                                         </div>
+                                       )
+                                     ))}
+                                   </div>
+                                 </div>
+                               )}
+                             </div>
+                          )}
+
+                          {/* Order Form inside the card */}
+                          <div className="mt-6 bg-white rounded-xl p-6 shadow-lg border-2 border-amber-100">
+                            <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                              <span className="text-2xl">🍗</span> Place Order
+                            </h4>
+                            <form onSubmit={handleOrderSubmit} className="space-y-4">
+                              <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Your Name</label>
+                                <input
+                                  type="text"
+                                  value={customerName}
+                                  onChange={(e) => setCustomerName(e.target.value)}
+                                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500 outline-none"
+                                  placeholder="e.g. Hungry Harry"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Quantity (Max 10)</label>
+                                <div className="flex items-center gap-3">
+                                  <input
+                                    type="range"
+                                    min="1"
+                                    max="10"
+                                    value={quantity}
+                                    onChange={(e) => setQuantity(parseInt(e.target.value))}
+                                    className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                                  />
+                                  <span className="text-xl font-bold text-amber-600 w-8 text-center">{quantity}</span>
+                                </div>
+                              </div>
+                              <div className="flex justify-between items-center pt-2">
+                                <span className="text-gray-500 font-medium">Total: <span className="text-gray-800 font-bold">£{totalCost}</span></span>
+                                <button
+                                  type="submit"
+                                  disabled={loading}
+                                  className="bg-amber-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-amber-600 transition-colors shadow-md disabled:opacity-50"
+                                >
+                                  {loading ? '...' : 'Order'}
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {!isSelected && (
+                        <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity text-amber-500 font-bold text-sm flex items-center gap-1">
+                          Select Broker →
                         </div>
                       )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-            </div>
-          </div>
-        ) : (
-          <div className="max-w-2xl mx-auto">
-            <button
-              onClick={() => setSelectedBroker(null)}
-              className="mb-6 text-white font-semibold hover:text-amber-700 flex items-center gap-2"
-            >
-              ← Back to Brokers
-            </button>
-            
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-              <div className="bg-amber-500 p-6 text-white">
-                <h2 className="text-2xl font-bold">Place Order with {selectedBroker.profile?.name || selectedBroker.username}</h2>
-                <p className="opacity-90">Secure your nuggets now!</p>
-              </div>
-              
-              <form onSubmit={handleOrderSubmit} className="p-8 space-y-6">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Your Name
-                  </label>
-                  <input
-                    type="text"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                    placeholder="e.g. Hungry Harry"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Quantity (Max 10)
-                  </label>
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="range"
-                      min="1"
-                      max="10"
-                      value={quantity}
-                      onChange={(e) => setQuantity(parseInt(e.target.value))}
-                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
-                    />
-                    <span className="text-2xl font-bold text-amber-600 w-12 text-center">
-                      {quantity}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg flex justify-between items-center border border-gray-200">
-                  <span className="text-gray-600 font-medium">Total Cost</span>
-                  <span className="text-3xl font-bold text-gray-800">£{totalCost}</span>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-amber-500 text-white py-4 rounded-xl font-bold text-lg hover:bg-amber-600 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Processing...' : 'Confirm Order 🍗'}
-                </button>
-              </form>
             </div>
           </div>
         )}
