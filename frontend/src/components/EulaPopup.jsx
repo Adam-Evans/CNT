@@ -28,7 +28,7 @@ const EulaPopup = ({ onAccept }) => {
         <div className="p-4 max-h-64 overflow-y-auto">
           <div className="space-y-3 text-sm text-gray-700">
             <p className="font-semibold">
-              Welcome to The Great Auto-Trail CNT!
+              Welcome to The Great CNT!
             </p>
 
             <p>

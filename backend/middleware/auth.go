@@ -59,7 +59,7 @@ func SuperAdminMiddleware() gin.HandlerFunc {
 // CORS middleware
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		allowedOrigins := []string{"https://cnt.auto-trail.co.uk", "http://localhost:5173"}
+		allowedOrigins := []string{"https://cnt.auto-trail.co.uk", "http://localhost:8080"}
 		origin := c.Request.Header.Get("Origin")
 		allowOrigin := ""
 		for _, o := range allowedOrigins {

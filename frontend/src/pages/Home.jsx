@@ -240,7 +240,7 @@ const Home = () => {
             <span className="text-amber-400">CNT</span>
           </h1>
           <p className="text-2xl md:text-4xl text-white font-bold drop-shadow-lg mb-8">
-            The Great Auto-Trail Chicken Nugget Tuesday
+            The Great Chicken Nugget Tuesday
           </p>
           <button
             onClick={() => navigate(user ? '/broker/dashboard' : '/login')}
