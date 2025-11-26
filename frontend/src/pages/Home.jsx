@@ -24,9 +24,8 @@ const Podium = ({ brokers }) => {
   return (
     <div className="min-h-screen bg-white flex flex-col" style={{
       backgroundImage: `url('https://c.tenor.com/BzTSwWeFTXkAAAAC/tenor.gif')`,
-      backgroundSize: '100% 125%',
-      backgroundPosition: '-70% 0%',
-      backgroundRepeat: 'no-repeat',
+      backgroundSize: '30% 50%',      
+      backgroundRepeat: 'repeat',
     }}>
       
       {/* Top Row - Podium */}
