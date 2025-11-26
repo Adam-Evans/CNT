@@ -152,6 +152,7 @@ const AdminDashboard = () => {
       setInviteCode(response.data.code);
       setInviteExpiry(new Date(response.data.expires_at).toLocaleTimeString());
     } catch {
+      // Error intentionally ignored - showing generic alert
       alert('Failed to generate invite');
     }
   };
@@ -498,6 +499,7 @@ const AdminDashboard = () => {
                                 await adminAPI.updateOrder(order.id, { broker_id: newBrokerId });
                                 loadOrders();
                               } catch {
+                                // Error intentionally ignored - showing generic alert
                                 alert('Failed to transfer order');
                               }
                             }
