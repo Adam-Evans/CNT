@@ -294,7 +294,7 @@ const Home = () => {
                         </div>
                       </div>
                       
-                      <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isSelected ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                      <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isSelected ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
                         <div className="pt-4 border-t border-amber-200 space-y-4">
                           {/* Content Logic: Show AI if enabled and user is NOT super admin (or logged out), otherwise show real profile */}
                           {showAIContent && (!user || !user.is_super_admin) ? (
