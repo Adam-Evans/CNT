@@ -275,7 +275,7 @@ const Home = () => {
                       className={`group bg-amber-50 rounded-xl p-6 cursor-pointer hover:shadow-xl transition-all border-2 ${isSelected ? 'border-amber-500 col-span-2 ring-4 ring-amber-200' : 'border-transparent hover:border-amber-400'} flex flex-col overflow-hidden relative`}
                     >
                       <div className="flex items-center gap-6 mb-4">
-                        <div className="w-24 h-24 flex-shrink-0 rounded-full bg-amber-200 flex items-center justify-center text-4xl shadow-inner overflow-hidden border-4 border-white">
+                        <div className={`${isSelected ? 'w-48 h-48' : 'w-24 h-24'} flex-shrink-0 rounded-full bg-amber-200 flex items-center justify-center text-4xl shadow-inner overflow-hidden border-4 border-white`}>
                           {broker.profile?.profile_picture ? (
                             <img
                               src={broker.profile.profile_picture}
