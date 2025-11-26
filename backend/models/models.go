@@ -18,6 +18,7 @@ type BrokerProfile struct {
 	MissionStatement string    `json:"mission_statement" db:"mission_statement"`
 	Testimonials     string    `json:"testimonials" db:"testimonials"`
 	ProfilePicture   string    `json:"profile_picture" db:"profile_picture"`
+	ShowAIContent    bool      `json:"show_ai_content" db:"show_ai_content"`
 	CreatedAt        time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at" db:"updated_at"`
 }
@@ -75,6 +76,23 @@ type ConfigUpdate struct {
 	EventEndDate      string `json:"event_end_date"`
 	OrdersClosingDate string `json:"orders_closing_date"`
 	ShowAIContent     string `json:"show_ai_content"`
+}
+
+type SiteConfig struct {
+	Key       string    `json:"key" db:"key"`
+	Value     string    `json:"value" db:"value"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+}
+
+type SiteConfigUpdate struct {
+	CEOName  string `json:"ceo_name"`
+	CEOTitle string `json:"ceo_title"`
+	CEOImage string `json:"ceo_image"`
+	CEOQuote string `json:"ceo_quote"`
+}
+
+type BrokerAIContentUpdate struct {
+	ShowAIContent bool `json:"show_ai_content"`
 }
 
 type BrokerWithProfile struct {

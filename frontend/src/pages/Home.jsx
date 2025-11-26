@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import confetti from 'canvas-confetti';
-import { brokerAPI, orderAPI, configAPI, authAPI } from '../api/client';
+import { brokerAPI, orderAPI, configAPI } from '../api/client';
 import EulaPopup from '../components/EulaPopup';
 import { useAuth } from '../context/AuthContext';
 import heroImage from '../assets/nuggets-hero.webp';
-import ceremonyImage from '../assets/nuggets-ceremony.webp';
 import ceoImage from '../assets/rick of thrones.webp';
 
 const Toast = ({ message }) => (
@@ -18,6 +17,7 @@ const Toast = ({ message }) => (
 );
 
 const Podium = ({ brokers }) => {
+  // Note: brokers now have total_sold already filtered to only count paid orders from the backend
   const sortedBrokers = [...brokers].sort((a, b) => (b.total_sold || 0) - (a.total_sold || 0));
   const [gold, silver, bronze] = sortedBrokers;
   const loser = sortedBrokers[sortedBrokers.length - 1];
@@ -148,6 +148,12 @@ const Home = () => {
   const [showEula, setShowEula] = useState(true);
   const [toastMessage, setToastMessage] = useState(null);
   const [showAIContent, setShowAIContent] = useState(false);
+  const [siteConfig, setSiteConfig] = useState({
+    ceo_name: 'Dicky Tinds',
+    ceo_title: 'CEO',
+    ceo_image: '',
+    ceo_quote: ''
+  });
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
@@ -155,6 +161,7 @@ const Home = () => {
   useEffect(() => {
     loadBrokers();
     loadConfig();
+    loadSiteConfig();
   }, []);
 
   const loadBrokers = async () => {
@@ -183,6 +190,20 @@ const Home = () => {
       }
     } catch (error) {
       console.error('Failed to load config:', error);
+    }
+  };
+
+  const loadSiteConfig = async () => {
+    try {
+      const response = await configAPI.getSiteConfig();
+      setSiteConfig({
+        ceo_name: response.data.ceo_name || 'Dicky Tinds',
+        ceo_title: response.data.ceo_title || 'CEO',
+        ceo_image: response.data.ceo_image || '',
+        ceo_quote: response.data.ceo_quote || ''
+      });
+    } catch (error) {
+      console.error('Failed to load site config:', error);
     }
   };
 
@@ -226,6 +247,11 @@ const Home = () => {
 
   const totalCost = (quantity * nuggetPrice).toFixed(2);
 
+  // Default CEO quote if none set
+  const defaultCeoQuote = `Winter is coming and Auto-Trail goes chicken nugget nutty. Never in my professional career have I seen such a thirst for poor quality, over processed meat, long may it continue!!!
+
+The festive season is a time where we cherish what we have, appreciate our loved ones, give to charity, and butcher some poultry. When I first joined Auto-Trail the concept was very alien to me but knowing what I know now it's very much an SOP of the business. As acting CEO is Mr. Spencer's timely absence down under I empower all of you to get involved, order some nuggs and chow down with us on Tuesday 9th December. We must all come together to fuel this annual tradition and attempt to beat the previous year's count. Using my fiscal contacts, I've managed to convince Mrs Reeves to hold off on the proposed tax rises for fast food so make hay while the sun shines and join the fun.`;
+
   return (
     <div className="min-h-screen bg-amber-50">
       {toastMessage && <Toast message={toastMessage} />}
@@ -262,19 +288,18 @@ const Home = () => {
           </div>
         ) : (
           <div className="max-w-7xl mx-auto">
-            {/* Intro Message + Image */}
+            {/* Intro Message + Image - Dynamic CEO Section */}
             <div className="flex flex-col md:flex-row items-center gap-8 bg-white rounded-2xl shadow-xl p-8 mb-8">
               <div className="flex-1">
                 <h2 className="text-3xl font-bold text-gray-800 mb-4">Well, here we are sports fans!</h2>
-                <p className="text-lg text-gray-700 mb-4">
-                  Winter is coming and Auto-Trail goes chicken nugget nutty. Never in my professional career have I seen such a thirst for poor quality, over processed meat, long may it continue!!!<br/><br/>
-                  The festive season is a time where we cherish what we have, appreciate our loved ones, give to charity, and butcher some poultry. When I first joined Auto-Trail the concept was very alien to me but knowing what I know now it’s very much an SOP of the business. As acting CEO is Mr. Spencer’s timely absence down under I empower all of you to get involved, order some nuggs and chow down with us on Tuesday 9th December. We must all come together to fuel this annual tradition and attempt to beat the previous year’s count. Using my fiscal contacts, I’ve managed to convince Mrs Reeves to hold off on the proposed tax rises for fast food so make hay while the sun shines and join the fun.<br/><br/>
-                  <span className="font-bold text-amber-700 text-xl block mt-4">VIVA LA NUGGET!</span>
-                  <span className="block mt-2 text-gray-500 italic">Dicky Tinds - CEO</span>
+                <p className="text-lg text-gray-700 mb-4 whitespace-pre-line">
+                  {siteConfig.ceo_quote || defaultCeoQuote}
                 </p>
+                <span className="font-bold text-amber-700 text-xl block mt-4">VIVA LA NUGGET!</span>
+                <span className="block mt-2 text-gray-500 italic">{siteConfig.ceo_name} - {siteConfig.ceo_title}</span>
               </div>
               <div className="flex-1 flex justify-center">
-                  <img src={ceoImage} alt="Rick of Thrones" className="rounded-xl shadow-2xl w-full max-w-xs md:max-w-sm object-cover" />
+                  <img src={siteConfig.ceo_image || ceoImage} alt={siteConfig.ceo_name} className="rounded-xl shadow-2xl w-full max-w-xs md:max-w-sm object-cover" />
               </div>
             </div>
             {/* Broker Grid */}
@@ -285,6 +310,9 @@ const Home = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {brokers.map((broker) => {
                   const isSelected = selectedBroker?.id === broker.id;
+                  // Determine if AI content should be shown for this broker
+                  // Show AI if: global setting is enabled AND broker's individual setting is enabled AND user is not super admin
+                  const shouldShowAI = showAIContent && broker.profile?.show_ai_content && (!user || !user.is_super_admin);
                   return (
                     <div
                       key={broker.id}
@@ -313,8 +341,8 @@ const Home = () => {
                       
                       <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isSelected ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
                         <div className="pt-4 border-t border-amber-200 space-y-4">
-                          {/* Content Logic: Show AI if enabled and user is NOT super admin (or logged out), otherwise show real profile */}
-                          {showAIContent && (!user || !user.is_super_admin) ? (
+                          {/* Content Logic: Show AI if enabled globally AND for this broker, and user is NOT super admin (or logged out) */}
+                          {shouldShowAI ? (
                              // AI Content
                              <div className="text-sm text-gray-600">
                                {broker.propaganda ? (

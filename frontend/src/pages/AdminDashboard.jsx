@@ -1,17 +1,75 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { adminAPI, configAPI } from '../api/client';
+import { adminAPI, configAPI, brokerAPI } from '../api/client';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const [stats, setStats] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [brokers, setBrokers] = useState([]);
   const [config, setConfig] = useState({ nugget_price: '5.00', event_end_date: '', orders_closing_date: '', show_ai_content: 'false' });
+  const [siteConfig, setSiteConfig] = useState({ ceo_name: '', ceo_title: '', ceo_image: '', ceo_quote: '' });
   const [editing, setEditing] = useState(false);
+  const [editingSiteConfig, setEditingSiteConfig] = useState(false);
   const [inviteCode, setInviteCode] = useState(null);
   const [inviteExpiry, setInviteExpiry] = useState(null);
   const navigate = useNavigate();
+
+  const loadStats = useCallback(async () => {
+    try {
+      const response = await adminAPI.getBrokerStats();
+      setStats(response.data || []);
+    } catch (err) {
+      console.error('Failed to load stats:', err);
+    }
+  }, []);
+
+  const loadOrders = useCallback(async () => {
+    try {
+      const response = await adminAPI.getAllOrders();
+      setOrders(response.data || []);
+    } catch (err) {
+      console.error('Failed to load orders:', err);
+    }
+  }, []);
+
+  const loadBrokers = useCallback(async () => {
+    try {
+      const response = await brokerAPI.getAllBrokers();
+      setBrokers(response.data || []);
+    } catch (err) {
+      console.error('Failed to load brokers:', err);
+    }
+  }, []);
+
+  const loadConfig = useCallback(async () => {
+    try {
+      const response = await configAPI.getConfig();
+      setConfig({
+        nugget_price: response.data.nugget_price || '5.00',
+        event_end_date: response.data.event_end_date || '',
+        orders_closing_date: response.data.orders_closing_date || '',
+        show_ai_content: response.data.show_ai_content || 'false',
+      });
+    } catch (err) {
+      console.error('Failed to load config:', err);
+    }
+  }, []);
+
+  const loadSiteConfig = useCallback(async () => {
+    try {
+      const response = await configAPI.getSiteConfig();
+      setSiteConfig({
+        ceo_name: response.data.ceo_name || '',
+        ceo_title: response.data.ceo_title || '',
+        ceo_image: response.data.ceo_image || '',
+        ceo_quote: response.data.ceo_quote || '',
+      });
+    } catch (err) {
+      console.error('Failed to load site config:', err);
+    }
+  }, []);
 
   useEffect(() => {
     if (!user || !user.is_super_admin) {
@@ -21,39 +79,9 @@ const AdminDashboard = () => {
     loadStats();
     loadOrders();
     loadConfig();
-  }, [user, navigate]);
-
-  const loadStats = async () => {
-    try {
-      const response = await adminAPI.getBrokerStats();
-      setStats(response.data || []);
-    } catch (error) {
-      console.error('Failed to load stats:', error);
-    }
-  };
-
-  const loadOrders = async () => {
-    try {
-      const response = await adminAPI.getAllOrders();
-      setOrders(response.data || []);
-    } catch (error) {
-      console.error('Failed to load orders:', error);
-    }
-  };
-
-  const loadConfig = async () => {
-    try {
-      const response = await configAPI.getConfig();
-      setConfig({
-        nugget_price: response.data.nugget_price || '5.00',
-        event_end_date: response.data.event_end_date || '',
-        orders_closing_date: response.data.orders_closing_date || '',
-        show_ai_content: response.data.show_ai_content || 'false',
-      });
-    } catch (error) {
-      console.error('Failed to load config:', error);
-    }
-  };
+    loadSiteConfig();
+    loadBrokers();
+  }, [user, navigate, loadStats, loadOrders, loadConfig, loadSiteConfig, loadBrokers]);
 
   const handleSaveConfig = async () => {
     try {
@@ -62,6 +90,16 @@ const AdminDashboard = () => {
       alert('Configuration updated successfully!');
     } catch (error) {
       alert(error.response?.data?.error || 'Failed to update configuration');
+    }
+  };
+
+  const handleSaveSiteConfig = async () => {
+    try {
+      await adminAPI.updateSiteConfig(siteConfig);
+      setEditingSiteConfig(false);
+      alert('Site configuration updated successfully!');
+    } catch (error) {
+      alert(error.response?.data?.error || 'Failed to update site configuration');
     }
   };
 
@@ -92,9 +130,19 @@ const AdminDashboard = () => {
       await adminAPI.deleteBroker(brokerId);
       loadStats();
       loadOrders();
+      loadBrokers();
       alert('Broker deleted successfully!');
     } catch (error) {
       alert(error.response?.data?.error || 'Failed to delete broker');
+    }
+  };
+
+  const handleToggleBrokerAI = async (brokerId, currentStatus) => {
+    try {
+      await adminAPI.updateBrokerAIContent(brokerId, { show_ai_content: !currentStatus });
+      loadBrokers();
+    } catch (error) {
+      alert(error.response?.data?.error || 'Failed to update broker AI setting');
     }
   };
 
@@ -103,7 +151,7 @@ const AdminDashboard = () => {
       const response = await adminAPI.generateInvite();
       setInviteCode(response.data.code);
       setInviteExpiry(new Date(response.data.expires_at).toLocaleTimeString());
-    } catch (error) {
+    } catch {
       alert('Failed to generate invite');
     }
   };
@@ -213,10 +261,10 @@ const AdminDashboard = () => {
             <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg border">
               <div>
                 <label className="block text-sm font-bold text-gray-700">
-                  Show AI Content
+                  Show AI Content (Global)
                 </label>
                 <p className="text-xs text-gray-500">
-                  {config.show_ai_content === 'true' ? 'Public sees AI Propaganda' : 'Public sees Real Profiles'}
+                  {config.show_ai_content === 'true' ? 'AI Propaganda enabled globally' : 'AI Propaganda disabled globally'}
                 </p>
               </div>
               <button
@@ -271,6 +319,77 @@ const AdminDashboard = () => {
           )}
         </div>
 
+        {/* Site Configuration Section (CEO Section) */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8 border-l-4 border-amber-500">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold">🎙️ Site Content (CEO Section)</h2>
+            <button
+              onClick={() => editingSiteConfig ? handleSaveSiteConfig() : setEditingSiteConfig(true)}
+              className={`px-6 py-2 rounded-lg font-bold ${
+                editingSiteConfig 
+                  ? 'bg-green-500 text-white hover:bg-green-600' 
+                  : 'bg-amber-500 text-white hover:bg-amber-600'
+              }`}
+            >
+              {editingSiteConfig ? 'Save Changes' : 'Edit Site Content'}
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                CEO Name
+              </label>
+              <input
+                type="text"
+                disabled={!editingSiteConfig}
+                value={siteConfig.ceo_name}
+                onChange={(e) => setSiteConfig({...siteConfig, ceo_name: e.target.value})}
+                className="w-full px-4 py-2 border rounded-lg disabled:bg-gray-100"
+                placeholder="e.g. Dicky Tinds"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                CEO Title
+              </label>
+              <input
+                type="text"
+                disabled={!editingSiteConfig}
+                value={siteConfig.ceo_title}
+                onChange={(e) => setSiteConfig({...siteConfig, ceo_title: e.target.value})}
+                className="w-full px-4 py-2 border rounded-lg disabled:bg-gray-100"
+                placeholder="e.g. CEO"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                CEO Image URL
+              </label>
+              <input
+                type="text"
+                disabled={!editingSiteConfig}
+                value={siteConfig.ceo_image}
+                onChange={(e) => setSiteConfig({...siteConfig, ceo_image: e.target.value})}
+                className="w-full px-4 py-2 border rounded-lg disabled:bg-gray-100"
+                placeholder="https://example.com/ceo-image.jpg (leave empty for default)"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                CEO Quote / Message
+              </label>
+              <textarea
+                disabled={!editingSiteConfig}
+                value={siteConfig.ceo_quote}
+                onChange={(e) => setSiteConfig({...siteConfig, ceo_quote: e.target.value})}
+                className="w-full px-4 py-2 border rounded-lg disabled:bg-gray-100 h-48"
+                placeholder="Enter the CEO's message to appear on the home page (leave empty for default)"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-lg shadow-lg">
@@ -291,6 +410,7 @@ const AdminDashboard = () => {
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
           <div className="p-6 border-b">
             <h2 className="text-2xl font-bold">Broker Management</h2>
+            <p className="text-sm text-gray-500 mt-1">Toggle AI content per broker when global AI is enabled</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -298,19 +418,35 @@ const AdminDashboard = () => {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Sold</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Sold (Paid)</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">AI Content</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {stats.map((broker) => (
-                  <tr key={broker.broker_id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">#{broker.broker_id}</td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">{broker.name || broker.username}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{broker.total_sold * 20 || 0} Nuggets</td>
+                {brokers.map((broker) => (
+                  <tr key={broker.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">#{broker.id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap font-medium">{broker.profile?.name || broker.username}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{(broker.total_sold || 0) * 20} Nuggets</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => handleToggleBrokerAI(broker.id, broker.profile?.show_ai_content)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+                          broker.profile?.show_ai_content ? 'bg-purple-600' : 'bg-gray-200'
+                        } cursor-pointer`}
+                        title={broker.profile?.show_ai_content ? 'AI enabled for this broker' : 'AI disabled for this broker'}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            broker.profile?.show_ai_content ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
-                        onClick={() => handleDeleteBroker(broker.broker_id)}
+                        onClick={() => handleDeleteBroker(broker.id)}
                         className="text-red-600 hover:text-red-900 font-semibold"
                       >
                         Delete Broker
@@ -361,7 +497,7 @@ const AdminDashboard = () => {
                               try {
                                 await adminAPI.updateOrder(order.id, { broker_id: newBrokerId });
                                 loadOrders();
-                              } catch (err) {
+                              } catch {
                                 alert('Failed to transfer order');
                               }
                             }

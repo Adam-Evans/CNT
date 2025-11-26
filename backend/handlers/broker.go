@@ -17,9 +17,9 @@ func GetAllBrokers(c *gin.Context) {
 	rows, err := db.Query(`
 		SELECT u.id, u.username, u.is_super_admin, u.created_at,
 		       bp.id, bp.user_id, bp.name, bp.bio, bp.mission_statement, 
-		       bp.testimonials, bp.profile_picture, bp.created_at, bp.updated_at,
+		       bp.testimonials, bp.profile_picture, bp.show_ai_content, bp.created_at, bp.updated_at,
 		       ac.propaganda_content,
-		       (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE broker_id = u.id) as total_sold
+		       (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE broker_id = u.id AND is_paid = 1) as total_sold
 		FROM users u
 		LEFT JOIN broker_profiles bp ON u.id = bp.user_id
 		LEFT JOIN ai_cache ac ON u.id = ac.broker_id
@@ -49,6 +49,7 @@ func GetAllBrokers(c *gin.Context) {
 		var profileMission sql.NullString
 		var profileTestimonials sql.NullString
 		var profilePicture sql.NullString
+		var showAIContent sql.NullBool
 		var profileCreatedAt sql.NullTime
 		var profileUpdatedAt sql.NullTime
 		var propagandaContent sql.NullString
@@ -57,7 +58,7 @@ func GetAllBrokers(c *gin.Context) {
 		err := rows.Scan(
 			&broker.ID, &broker.Username, &broker.IsSuperAdmin, &broker.CreatedAt,
 			&profileID, &profileUserID, &profileName, &profileBio, &profileMission,
-			&profileTestimonials, &profilePicture, &profileCreatedAt, &profileUpdatedAt,
+			&profileTestimonials, &profilePicture, &showAIContent, &profileCreatedAt, &profileUpdatedAt,
 			&propagandaContent, &totalSold,
 		)
 		if err != nil {
@@ -72,6 +73,7 @@ func GetAllBrokers(c *gin.Context) {
 			profile.MissionStatement = profileMission.String
 			profile.Testimonials = profileTestimonials.String
 			profile.ProfilePicture = profilePicture.String
+			profile.ShowAIContent = showAIContent.Bool
 			profile.CreatedAt = profileCreatedAt.Time
 			profile.UpdatedAt = profileUpdatedAt.Time
 			broker.Profile = &profile
@@ -96,15 +98,16 @@ func GetBrokerProfile(c *gin.Context) {
 	db := database.GetDB()
 	var profile models.BrokerProfile
 	var bio, missionStatement, testimonials, profilePicture sql.NullString
+	var showAIContent sql.NullBool
 
 	err = db.QueryRow(`
 		SELECT id, user_id, name, bio, mission_statement, testimonials, 
-		       profile_picture, created_at, updated_at
+		       profile_picture, show_ai_content, created_at, updated_at
 		FROM broker_profiles
 		WHERE user_id = ?
 	`, brokerID).Scan(
 		&profile.ID, &profile.UserID, &profile.Name, &bio,
-		&missionStatement, &testimonials, &profilePicture,
+		&missionStatement, &testimonials, &profilePicture, &showAIContent,
 		&profile.CreatedAt, &profile.UpdatedAt,
 	)
 
@@ -121,6 +124,7 @@ func GetBrokerProfile(c *gin.Context) {
 	profile.MissionStatement = missionStatement.String
 	profile.Testimonials = testimonials.String
 	profile.ProfilePicture = profilePicture.String
+	profile.ShowAIContent = showAIContent.Bool
 
 	c.JSON(http.StatusOK, profile)
 }
@@ -132,15 +136,16 @@ func GetMyProfile(c *gin.Context) {
 	db := database.GetDB()
 	var profile models.BrokerProfile
 	var bio, missionStatement, testimonials, profilePicture sql.NullString
+	var showAIContent sql.NullBool
 
 	err := db.QueryRow(`
 		SELECT id, user_id, name, bio, mission_statement, testimonials, 
-		       profile_picture, created_at, updated_at
+		       profile_picture, show_ai_content, created_at, updated_at
 		FROM broker_profiles
 		WHERE user_id = ?
 	`, userID).Scan(
 		&profile.ID, &profile.UserID, &profile.Name, &bio,
-		&missionStatement, &testimonials, &profilePicture,
+		&missionStatement, &testimonials, &profilePicture, &showAIContent,
 		&profile.CreatedAt, &profile.UpdatedAt,
 	)
 
@@ -157,6 +162,7 @@ func GetMyProfile(c *gin.Context) {
 	profile.MissionStatement = missionStatement.String
 	profile.Testimonials = testimonials.String
 	profile.ProfilePicture = profilePicture.String
+	profile.ShowAIContent = showAIContent.Bool
 
 	c.JSON(http.StatusOK, profile)
 }
@@ -259,6 +265,35 @@ func UpdateBrokerProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Profile updated successfully"})
+}
+
+// UpdateBrokerAIContent (Super Admin only) toggles the AI content visibility for a specific broker
+func UpdateBrokerAIContent(c *gin.Context) {
+	brokerID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid broker ID"})
+		return
+	}
+
+	var req models.BrokerAIContentUpdate
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	db := database.GetDB()
+	_, err = db.Exec(`
+		UPDATE broker_profiles
+		SET show_ai_content = ?, updated_at = CURRENT_TIMESTAMP
+		WHERE user_id = ?
+	`, req.ShowAIContent, brokerID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update AI content setting"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "AI content setting updated successfully"})
 }
 
 // DeleteBroker deletes a broker and all their related data

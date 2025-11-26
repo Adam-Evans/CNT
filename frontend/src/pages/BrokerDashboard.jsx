@@ -141,8 +141,9 @@ const BrokerDashboard = () => {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  const totalRevenue = orders.reduce((sum, order) => sum + order.cost, 0);
-  const paidRevenue = orders.filter(o => o.is_paid).reduce((sum, order) => sum + order.cost, 0);
+  // Revenue tracking - available for future use
+  const _totalRevenue = orders.reduce((sum, order) => sum + order.cost, 0);
+  const _paidRevenue = orders.filter(o => o.is_paid).reduce((sum, order) => sum + order.cost, 0);
 
   if (!profile) {
     return (
