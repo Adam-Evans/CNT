@@ -5,6 +5,10 @@ FROM node:20 AS frontend-builder
 
 WORKDIR /app/frontend
 
+# Add these lines:
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/ ./
