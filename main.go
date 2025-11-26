@@ -13,13 +13,31 @@ import (
 )
 
 func main() {
+	// Configure logging
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.Println("🐔 CNT API Server Starting...")
+
 	// Load .env file
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found")
+		log.Println("INFO: No .env file found, relying on system environment variables")
+	} else {
+		log.Println("INFO: Loaded .env file")
 	}
+
+	// Log startup configuration
+	log.Printf("Startup Configuration:")
+	log.Printf("- GIN_MODE: %s", os.Getenv("GIN_MODE"))
+	log.Printf("- PORT: %s", os.Getenv("PORT"))
+	log.Printf("- DB_PATH: %s", os.Getenv("DB_PATH"))
+	log.Printf("- JWT_SECRET Set: %v", os.Getenv("JWT_SECRET") != "")
+	log.Printf("- GEMINI_API_KEY Set: %v", os.Getenv("GEMINI_API_KEY") != "")
+
+	wd, _ := os.Getwd()
+	log.Printf("- Working Directory: %s", wd)
 
 	// Initialize database
 	dbPath := database.GetDatabasePath()
+	log.Printf("Initializing database at: %s", dbPath)
 	if err := database.InitDB(dbPath); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
@@ -79,7 +97,7 @@ func main() {
 
 	// Serve static files (React app)
 	r.Static("/assets", "./frontend/dist/assets")
-	r.StaticFile("/", "./frontend/dist/index.html")
+	r.StaticFile("/app", "./frontend/dist/index.html")
 	r.NoRoute(func(c *gin.Context) {
 		c.File("./frontend/dist/index.html")
 	})

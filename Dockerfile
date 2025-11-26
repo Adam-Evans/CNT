@@ -6,13 +6,13 @@ FROM node:20 AS frontend-builder
 WORKDIR /app/frontend
 
 COPY frontend/package*.json ./
-RUN npm ci
-
+RUN npm install
 COPY frontend/ ./
+RUN chmod +x node_modules/.bin/vite
 RUN npm run build
 
 # Stage 2: Build Go backend
-FROM golang:1.22-alpine AS backend-builder
+FROM golang:1.24-alpine AS backend-builder
 
 WORKDIR /app
 
@@ -46,6 +46,15 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
 # Create directory for database
 RUN mkdir -p /data
+
+# Create a non-root user and group
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Change ownership of the application and data directories
+RUN chown -R appuser:appgroup /app /data
+
+# Switch to non-root user
+USER appuser
 
 # Set environment variables
 ENV DB_PATH=/data/cnt.db

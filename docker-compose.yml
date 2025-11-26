@@ -3,11 +3,12 @@ version: '3.8'
 services:
   cnt-app:
     build:
-      context: .
+      context: https://github.com/Adam-Evans/CNT.git
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
     environment:
+      - PORT=8080
       - DB_PATH=/data/cnt.db
       - JWT_SECRET=${JWT_SECRET:-change-this-secret-in-production}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}

@@ -59,7 +59,18 @@ func SuperAdminMiddleware() gin.HandlerFunc {
 // CORS middleware
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		allowedOrigins := []string{"https://cnt.auto-trail.co.uk", "http://localhost:5173"}
+		origin := c.Request.Header.Get("Origin")
+		allowOrigin := ""
+		for _, o := range allowedOrigins {
+			if o == origin {
+				allowOrigin = o
+				break
+			}
+		}
+		if allowOrigin != "" {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", allowOrigin)
+		}
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
