@@ -86,6 +86,18 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleDeleteBroker = async (brokerId) => {
+    if (!window.confirm('Are you sure you want to delete this broker? All their orders will be deleted. This cannot be undone.')) return;
+    try {
+      await adminAPI.deleteBroker(brokerId);
+      loadStats();
+      loadOrders();
+      alert('Broker deleted successfully!');
+    } catch (error) {
+      alert(error.response?.data?.error || 'Failed to delete broker');
+    }
+  };
+
   const handleGenerateInvite = async () => {
     try {
       const response = await adminAPI.generateInvite();
@@ -272,6 +284,42 @@ const AdminDashboard = () => {
           <div className="bg-white p-6 rounded-lg shadow-lg">
             <h3 className="text-gray-500 font-medium mb-2">Paid Revenue</h3>
             <p className="text-4xl font-bold text-purple-600">£{paidRevenue.toFixed(2)}</p>
+          </div>
+        </div>
+
+        {/* Brokers Management */}
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+          <div className="p-6 border-b">
+            <h2 className="text-2xl font-bold">Broker Management</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Sold</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {stats.map((broker) => (
+                  <tr key={broker.broker_id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">#{broker.broker_id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap font-medium">{broker.name || broker.username}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{broker.total_sold * 20 || 0} Nuggets</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={() => handleDeleteBroker(broker.broker_id)}
+                        className="text-red-600 hover:text-red-900 font-semibold"
+                      >
+                        Delete Broker
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
 

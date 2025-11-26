@@ -93,6 +93,7 @@ func main() {
 		admin.GET("/stats", handlers.GetBrokerStats)
 		admin.PUT("/config", handlers.UpdateConfig)
 		admin.PUT("/brokers/:id", handlers.UpdateBrokerProfile)
+		admin.DELETE("/brokers/:id", handlers.DeleteBroker)
 		admin.POST("/invites", handlers.GenerateInvite)
 	}
 

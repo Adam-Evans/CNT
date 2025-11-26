@@ -47,6 +47,7 @@ export const adminAPI = {
   getBrokerStats: () => api.get('/admin/stats'),
   updateConfig: (data) => api.put('/admin/config', data),
   updateBrokerProfile: (id, data) => api.put(`/admin/brokers/${id}`, data),
+  deleteBroker: (id) => api.delete(`/admin/brokers/${id}`),
   generateInvite: () => api.post('/admin/invites'),
 };
 

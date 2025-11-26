@@ -260,3 +260,51 @@ func UpdateBrokerProfile(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Profile updated successfully"})
 }
+
+// DeleteBroker deletes a broker and all their related data
+func DeleteBroker(c *gin.Context) {
+	brokerID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid broker ID"})
+		return
+	}
+
+	db := database.GetDB()
+	tx, err := db.Begin()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+	defer tx.Rollback()
+
+	// Delete all orders for this broker
+	if _, err := tx.Exec("DELETE FROM orders WHERE broker_id = ?", brokerID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete orders"})
+		return
+	}
+
+	// Delete broker profile
+	if _, err := tx.Exec("DELETE FROM broker_profiles WHERE user_id = ?", brokerID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete profile"})
+		return
+	}
+
+	// Delete AI cache for broker
+	if _, err := tx.Exec("DELETE FROM ai_cache WHERE broker_id = ?", brokerID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear cache"})
+		return
+	}
+
+	// Delete the user itself
+	if _, err := tx.Exec("DELETE FROM users WHERE id = ?", brokerID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Broker deleted successfully"})
+}
