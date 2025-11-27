@@ -68,6 +68,7 @@ func main() {
 		public.GET("/brokers/:id", handlers.GetBrokerProfile)
 		public.POST("/orders", handlers.CreateOrder)
 		public.GET("/config", handlers.GetConfig)
+		public.GET("/site-config", handlers.GetSiteConfig)
 	}
 
 	// Authenticated routes
@@ -92,7 +93,9 @@ func main() {
 		admin.DELETE("/orders/:id", handlers.DeleteOrder)
 		admin.GET("/stats", handlers.GetBrokerStats)
 		admin.PUT("/config", handlers.UpdateConfig)
+		admin.PUT("/site-config", handlers.UpdateSiteConfig)
 		admin.PUT("/brokers/:id", handlers.UpdateBrokerProfile)
+		admin.PUT("/brokers/:id/ai-content", handlers.UpdateBrokerAIContent)
 		admin.DELETE("/brokers/:id", handlers.DeleteBroker)
 		admin.POST("/invites", handlers.GenerateInvite)
 	}

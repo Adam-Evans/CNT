@@ -46,7 +46,9 @@ export const adminAPI = {
   deleteOrder: (id) => api.delete(`/admin/orders/${id}`),
   getBrokerStats: () => api.get('/admin/stats'),
   updateConfig: (data) => api.put('/admin/config', data),
+  updateSiteConfig: (data) => api.put('/admin/site-config', data),
   updateBrokerProfile: (id, data) => api.put(`/admin/brokers/${id}`, data),
+  updateBrokerAIContent: (id, data) => api.put(`/admin/brokers/${id}/ai-content`, data),
   deleteBroker: (id) => api.delete(`/admin/brokers/${id}`),
   generateInvite: () => api.post('/admin/invites'),
 };
@@ -54,6 +56,7 @@ export const adminAPI = {
 // Config API
 export const configAPI = {
   getConfig: () => api.get('/config'),
+  getSiteConfig: () => api.get('/site-config'),
 };
 
 export default api;

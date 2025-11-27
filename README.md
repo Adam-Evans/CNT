@@ -1,33 +1,100 @@
-# 🍗 CNT (Chicken Nugget Tuesday)
+# 🍗 CNT - Chicken Nugget Tuesday
 
-A full-stack web application for managing "The Great Auto-Trail CNT" event - a fun competition where brokers compete to sell the most chicken nuggets!
+> *The ultimate platform for organizing and celebrating Chicken Nugget Tuesday!*
 
-## Features
+A full-stack web application for managing "The Great Chicken Nugget Tuesday" event - a fun competition where brokers compete to sell the most chicken nuggets! Built for extensibility and ready to grow with your nugget-selling ambitions.
+
+## ✨ Features
 
 ### For Everyone
-- 🏠 Customer-facing home page to browse brokers and place orders
+- 🏠 Beautiful customer-facing home page to browse brokers and place orders
 - 📝 EULA/Terms popup with the "Adam Clause" 
 - 🔐 Secure authentication system
+- 🎨 Customizable site content including dynamic CEO messages
 
 ### For Brokers
 - 👤 Personal profile management (bio, mission statement, testimonials, profile picture)
 - 📊 Order dashboard showing all customer orders
 - 💰 Revenue tracking (total and paid)
-- 🤖 AI-generated "anti-propaganda" using Google Gemini Flash (opposite day twist on their own bios!)
+- 🤖 A special twist awaits... (AI-powered content generation)
 
 ### For Super Admin
 - 👑 Full system configuration (nugget pricing, event end date)
 - 📈 Broker leaderboard and statistics
 - 💳 Order management (mark orders as paid/unpaid)
 - 🎯 Access to all broker profiles and orders
+- 🔧 Per-broker configuration for AI content visibility
+- 🎙️ Customizable site content (CEO section with name, title, image, and message)
 
-## Tech Stack
+## 🚀 Quick Start
+
+### Prerequisites
+- Docker & Docker Compose (recommended)
+- OR: Go 1.22+, Node.js 20+, and npm
+
+### Option 1: Docker (Recommended)
+
+```bash
+# Clone the repository
+git clone https://github.com/Adam-Evans/CNT.git
+cd CNT
+
+# Create a .env file
+cp .env.example .env
+
+# Edit .env and set your secrets
+# JWT_SECRET=your-super-secret-jwt-key
+# GEMINI_API_KEY=your-gemini-api-key  # Optional - for AI features
+
+# Start the application
+docker-compose up -d
+```
+
+Access the application at `http://localhost:8080`
+
+### Option 2: Local Development
+
+#### Backend Setup
+
+```bash
+# Install Go dependencies
+go mod download
+
+# Set environment variables
+export JWT_SECRET=your-secret-key
+export GEMINI_API_KEY=your-api-key  # Optional
+export DB_PATH=./cnt.db
+export PORT=8080
+
+# Run the server
+go run main.go
+```
+
+#### Frontend Setup
+
+```bash
+cd frontend
+npm install
+echo "VITE_API_URL=http://localhost:8080/api" > .env
+npm run dev
+```
+
+Access the frontend at `http://localhost:5173`
+
+## 🔐 Default Credentials
+
+- **Username:** `admin`
+- **Password:** `admin123`
+
+⚠️ **IMPORTANT:** Change this password immediately after first login!
+
+## 🛠️ Tech Stack
 
 ### Backend
 - **Go 1.22+** - Main backend language
 - **Gin** - Web framework
 - **SQLite** - Embedded database (zero configuration)
-- **Google Gemini Flash API** - AI propaganda generation
+- **Google Gemini Flash API** - AI content generation
 - **JWT** - Authentication tokens
 - **bcrypt** - Password hashing
 
@@ -43,151 +110,58 @@ A full-stack web application for managing "The Great Auto-Trail CNT" event - a f
 - **Docker Compose** - Local development
 - **GitHub Actions** - CI/CD pipeline
 
-## Quick Start
-
-### Prerequisites
-- Docker & Docker Compose (recommended)
-- OR: Go 1.22+, Node.js 20+, and npm
-
-### Option 1: Docker (Recommended)
-
-1. Clone the repository:
-```bash
-git clone https://github.com/Adam-Evans/CNT.git
-cd CNT
-```
-
-2. Create a `.env` file (copy from `.env.example`):
-```bash
-cp .env.example .env
-```
-
-3. Edit `.env` and set your secrets:
-```env
-JWT_SECRET=your-super-secret-jwt-key
-GEMINI_API_KEY=your-gemini-api-key  # Optional - for AI features
-```
-
-4. Start the application:
-```bash
-docker-compose up -d
-```
-
-5. Access the application at `http://localhost:8080`
-
-### Option 2: Local Development
-
-#### Backend Setup
-
-1. Install Go dependencies:
-```bash
-go mod download
-```
-
-2. Initialize the database:
-```bash
-go run main.go
-# Database will be created at ./cnt.db
-```
-
-3. Run the backend:
-```bash
-# Set environment variables
-export JWT_SECRET=your-secret-key
-export GEMINI_API_KEY=your-api-key  # Optional
-export DB_PATH=./cnt.db
-export PORT=8080
-
-# Run the server
-go run main.go
-```
-
-#### Frontend Setup
-
-1. Navigate to frontend directory:
-```bash
-cd frontend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Create `.env` file:
-```bash
-echo "VITE_API_URL=http://localhost:8080/api" > .env
-```
-
-4. Run the development server:
-```bash
-npm run dev
-```
-
-5. Access the frontend at `http://localhost:5173`
-
-## Default Credentials
-
-The application comes with a default super admin account:
-- **Username:** `admin`
-- **Password:** `admin123`
-
-⚠️ **IMPORTANT:** Change this password immediately after first login!
-
-## API Documentation
+## 📚 API Documentation
 
 ### Public Endpoints
-
-#### Authentication
-- `POST /api/auth/login` - Login (broker or admin)
+- `POST /api/auth/login` - Login
 - `POST /api/auth/register` - Register new broker account
-
-#### Brokers
 - `GET /api/brokers` - List all brokers with profiles
 - `GET /api/brokers/:id` - Get specific broker profile
-
-#### Orders
 - `POST /api/orders` - Place an order
-
-#### Configuration
-- `GET /api/config` - Get system configuration (price, end date)
+- `GET /api/config` - Get system configuration
+- `GET /api/site-config` - Get site content configuration
 
 ### Authenticated Endpoints (Broker)
-
 - `GET /api/auth/me` - Get current user info
 - `GET /api/my/profile` - Get my broker profile
 - `PUT /api/my/profile` - Update my broker profile
-- `GET /api/my/propaganda` - Get AI-generated propaganda for my profile
+- `GET /api/my/propaganda` - Get AI-generated content for my profile
 - `GET /api/my/orders` - Get all my orders
 
 ### Admin Endpoints
-
-- `GET /api/admin/orders` - Get all orders in the system
-- `PUT /api/admin/orders/:id` - Update order (payment status)
-- `GET /api/admin/stats` - Get broker statistics and leaderboard
+- `GET /api/admin/orders` - Get all orders
+- `PUT /api/admin/orders/:id` - Update order
+- `GET /api/admin/stats` - Get broker statistics
 - `PUT /api/admin/config` - Update system configuration
+- `PUT /api/admin/site-config` - Update site content configuration
 - `PUT /api/admin/brokers/:id` - Update any broker's profile
+- `PUT /api/admin/brokers/:id/ai-content` - Toggle AI content for a specific broker
 
-## Database Schema
+## 🗄️ Database Schema
 
 The SQLite database contains the following tables:
 - `users` - User accounts (brokers and admin)
-- `broker_profiles` - Broker profile information
+- `broker_profiles` - Broker profile information (includes per-broker AI toggle)
 - `orders` - Customer orders
 - `config` - System configuration
-- `ai_cache` - Cached AI-generated propaganda
+- `site_config` - Customizable site content (CEO section)
+- `ai_cache` - Cached AI-generated content
 
-## AI Propaganda Feature
+## 📊 Scoring System
 
-When a broker views their dashboard, the system generates humorous "opposite day" propaganda based on their profile using Google Gemini Flash API. The content is cached until the profile is updated.
+The final scores on the leaderboard reflect **only paid orders**. Unpaid orders are tracked but do not count toward the competition standings. This ensures fair and accurate results for Chicken Nugget Tuesday!
 
-To enable this feature:
-1. Get a free API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Set the `GEMINI_API_KEY` environment variable
+## 🔧 Environment Variables
 
-If no API key is set, the feature will gracefully degrade with a default message.
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `DB_PATH` | No | `./cnt.db` | Path to SQLite database file |
+| `PORT` | No | `8080` | Server port |
+| `JWT_SECRET` | Yes | - | Secret key for JWT tokens |
+| `GEMINI_API_KEY` | No | - | Google Gemini API key for AI features |
+| `GIN_MODE` | No | `release` | Gin framework mode (debug/release) |
 
-## Deployment
+## 🚢 Deployment
 
 ### Docker Hub Deployment
 
@@ -199,13 +173,11 @@ Required secrets:
 
 ### Manual Deployment
 
-1. Build the Docker image:
 ```bash
+# Build the Docker image
 docker build -t cnt:latest .
-```
 
-2. Run the container:
-```bash
+# Run the container
 docker run -d \
   -p 8080:8080 \
   -e JWT_SECRET=your-secret \
@@ -214,44 +186,7 @@ docker run -d \
   cnt:latest
 ```
 
-## Environment Variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `DB_PATH` | No | `./cnt.db` | Path to SQLite database file |
-| `PORT` | No | `8080` | Server port |
-| `JWT_SECRET` | Yes | - | Secret key for JWT tokens |
-| `GEMINI_API_KEY` | No | - | Google Gemini API key for AI features |
-| `GIN_MODE` | No | `release` | Gin framework mode (debug/release) |
-
-## Development
-
-### Running Tests
-
-```bash
-# Backend tests
-go test ./...
-
-# Frontend tests (if added)
-cd frontend
-npm test
-```
-
-### Building for Production
-
-```bash
-# Build frontend
-cd frontend
-npm run build
-
-# Build backend
-go build -o cnt-server
-
-# Or use Docker
-docker build -t cnt:latest .
-```
-
-## Security Considerations
+## 🔒 Security Considerations
 
 - Change default admin password immediately
 - Use strong JWT_SECRET in production
@@ -259,18 +194,18 @@ docker build -t cnt:latest .
 - Regularly update dependencies
 - Keep API keys secure and never commit them to git
 
-## License
+## 📄 License
 
 This project is for personal/educational use.
 
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
 4. Submit a pull request
 
-## Support
+## 💬 Support
 
 For issues and questions, please use the GitHub issue tracker.
 
@@ -278,3 +213,4 @@ For issues and questions, please use the GitHub issue tracker.
 
 Made with 🍗 and ❤️ for Chicken Nugget Tuesday
 
+*Remember: Every nugget counts... but only if it's paid for! 🎉*
