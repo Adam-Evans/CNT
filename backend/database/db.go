@@ -36,7 +36,36 @@ func InitDB(dbPath string) error {
 		return err
 	}
 
+	// Run migrations
+	if err := runMigrations(); err != nil {
+		return err
+	}
+
 	log.Println("Database initialized successfully")
+	return nil
+}
+
+// runMigrations applies any necessary database migrations for existing databases
+func runMigrations() error {
+	// Migration: Add show_ai_content column to broker_profiles if it doesn't exist
+	// This is needed for databases created before the individual AI content control feature
+	var columnExists int
+	err := DB.QueryRow(`
+		SELECT COUNT(*) FROM pragma_table_info('broker_profiles') WHERE name = 'show_ai_content'
+	`).Scan(&columnExists)
+	if err != nil {
+		return err
+	}
+
+	if columnExists == 0 {
+		log.Println("Running migration: Adding show_ai_content column to broker_profiles")
+		_, err := DB.Exec(`ALTER TABLE broker_profiles ADD COLUMN show_ai_content BOOLEAN DEFAULT 1`)
+		if err != nil {
+			return err
+		}
+		log.Println("Migration complete: show_ai_content column added")
+	}
+
 	return nil
 }
 
