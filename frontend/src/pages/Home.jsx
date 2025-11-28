@@ -148,12 +148,6 @@ const Home = () => {
   const [showEula, setShowEula] = useState(true);
   const [toastMessage, setToastMessage] = useState(null);
   const [showAIContent, setShowAIContent] = useState(false);
-  const [siteConfig, setSiteConfig] = useState({
-    ceo_name: 'Dicky Tinds',
-    ceo_title: 'CEO',
-    ceo_image: '',
-    ceo_quote: ''
-  });
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
@@ -161,7 +155,6 @@ const Home = () => {
   useEffect(() => {
     loadBrokers();
     loadConfig();
-    loadSiteConfig();
   }, []);
 
   const loadBrokers = async () => {
@@ -190,20 +183,6 @@ const Home = () => {
       }
     } catch (error) {
       console.error('Failed to load config:', error);
-    }
-  };
-
-  const loadSiteConfig = async () => {
-    try {
-      const response = await configAPI.getSiteConfig();
-      setSiteConfig({
-        ceo_name: response.data.ceo_name || 'Dicky Tinds',
-        ceo_title: response.data.ceo_title || 'CEO',
-        ceo_image: response.data.ceo_image || '',
-        ceo_quote: response.data.ceo_quote || ''
-      });
-    } catch (error) {
-      console.error('Failed to load site config:', error);
     }
   };
 
@@ -247,8 +226,8 @@ const Home = () => {
 
   const totalCost = (quantity * nuggetPrice).toFixed(2);
 
-  // Default CEO quote if none set
-  const defaultCeoQuote = `Winter is coming and Auto-Trail goes chicken nugget nutty. Never in my professional career have I seen such a thirst for poor quality, over processed meat, long may it continue!!!
+  // Static CEO quote
+  const ceoQuote = `Winter is coming and Auto-Trail goes chicken nugget nutty. Never in my professional career have I seen such a thirst for poor quality, over processed meat, long may it continue!!!
 
 The festive season is a time where we cherish what we have, appreciate our loved ones, give to charity, and butcher some poultry. When I first joined Auto-Trail the concept was very alien to me but knowing what I know now it's very much an SOP of the business. As acting CEO is Mr. Spencer's timely absence down under I empower all of you to get involved, order some nuggs and chow down with us on Tuesday 9th December. We must all come together to fuel this annual tradition and attempt to beat the previous year's count. Using my fiscal contacts, I've managed to convince Mrs Reeves to hold off on the proposed tax rises for fast food so make hay while the sun shines and join the fun.`;
 
@@ -288,18 +267,18 @@ The festive season is a time where we cherish what we have, appreciate our loved
           </div>
         ) : (
           <div className="max-w-7xl mx-auto">
-            {/* Intro Message + Image - Dynamic CEO Section */}
+            {/* Intro Message + Image - Static CEO Section */}
             <div className="flex flex-col md:flex-row items-center gap-8 bg-white rounded-2xl shadow-xl p-8 mb-8">
               <div className="flex-1">
                 <h2 className="text-3xl font-bold text-gray-800 mb-4">Well, here we are sports fans!</h2>
                 <p className="text-lg text-gray-700 mb-4 whitespace-pre-line">
-                  {siteConfig.ceo_quote || defaultCeoQuote}
+                  {ceoQuote}
                 </p>
                 <span className="font-bold text-amber-700 text-xl block mt-4">VIVA LA NUGGET!</span>
-                <span className="block mt-2 text-gray-500 italic">{siteConfig.ceo_name} - {siteConfig.ceo_title}</span>
+                <span className="block mt-2 text-gray-500 italic">Dicky Tinds - CEO</span>
               </div>
               <div className="flex-1 flex justify-center">
-                  <img src={siteConfig.ceo_image || ceoImage} alt={siteConfig.ceo_name} className="rounded-xl shadow-2xl w-full max-w-xs md:max-w-sm object-cover" />
+                  <img src={ceoImage} alt="Dicky Tinds" className="rounded-xl shadow-2xl w-full max-w-xs md:max-w-sm object-cover" />
               </div>
             </div>
             {/* Broker Grid */}
