@@ -22,7 +22,7 @@ const Toast = ({ message }) => (
 );
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { brokerAPI, orderAPI } from '../api/client';
+import { brokerAPI, orderAPI, authAPI } from '../api/client';
 
 const BrokerDashboard = () => {
   const { user, logout } = useAuth();
@@ -32,6 +32,10 @@ const BrokerDashboard = () => {
   const [orders, setOrders] = useState([]);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     bio: '',
@@ -141,6 +145,28 @@ const BrokerDashboard = () => {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
+  const handleChangePassword = async () => {
+    if (newPassword.length < 6) {
+      alert('Password must be at least 6 characters');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+    try {
+      await authAPI.changePassword(currentPassword, newPassword);
+      setToastMessage('Password changed successfully!');
+      setTimeout(() => setToastMessage(null), 4000);
+      setShowPasswordModal(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      alert(error.response?.data?.error || 'Failed to change password');
+    }
+  };
+
   // Revenue tracking - available for future use
   const _totalRevenue = orders.reduce((sum, order) => sum + order.cost, 0);
   const _paidRevenue = orders.filter(o => o.is_paid).reduce((sum, order) => sum + order.cost, 0);
@@ -157,6 +183,67 @@ const BrokerDashboard = () => {
     <div className="min-h-screen bg-gray-100">
       {saving && <LoadingModal />}
       {toastMessage && <Toast message={toastMessage} />}
+      
+      {/* Password Change Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">Change Password</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  placeholder="Enter current password"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  placeholder="Enter new password (min 6 characters)"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  placeholder="Confirm new password"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleChangePassword}
+                  className="flex-1 bg-orange-600 text-white py-2 rounded-lg font-semibold hover:bg-orange-700"
+                >
+                  Change Password
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPasswordModal(false);
+                    setCurrentPassword('');
+                    setNewPassword('');
+                    setConfirmPassword('');
+                  }}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <nav className="bg-orange-600 text-white p-4 shadow-lg">
         <div className="container mx-auto flex justify-between items-center">
           <h1 onClick={() => { location.href = "/"; }} className="text-2xl font-bold cursor-pointer">🍗 Broker Dashboard</h1>
@@ -172,12 +259,20 @@ const BrokerDashboard = () => {
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold">My Profile</h2>
-              <button
-                onClick={() => setEditing(!editing)}
-                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
-              >
-                {editing ? 'Cancel' : 'Edit'}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowPasswordModal(true)}
+                  className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                >
+                  Change Password
+                </button>
+                <button
+                  onClick={() => setEditing(!editing)}
+                  className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
+                >
+                  {editing ? 'Cancel' : 'Edit'}
+                </button>
+              </div>
             </div>
 
             {editing ? (

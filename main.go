@@ -76,6 +76,7 @@ func main() {
 	auth.Use(middleware.AuthMiddleware())
 	{
 		auth.GET("/auth/me", handlers.GetCurrentUser)
+		auth.PUT("/auth/change-password", handlers.ChangePassword)
 		auth.GET("/my/profile", handlers.GetMyProfile)
 		auth.PUT("/my/profile", handlers.UpdateMyProfile)
 		auth.GET("/my/propaganda", handlers.GetMyPropaganda)
@@ -96,6 +97,7 @@ func main() {
 		admin.PUT("/site-config", handlers.UpdateSiteConfig)
 		admin.PUT("/brokers/:id", handlers.UpdateBrokerProfile)
 		admin.PUT("/brokers/:id/ai-content", handlers.UpdateBrokerAIContent)
+		admin.PUT("/brokers/:id/reset-password", handlers.ResetBrokerPassword)
 		admin.DELETE("/brokers/:id", handlers.DeleteBroker)
 		admin.POST("/invites", handlers.GenerateInvite)
 	}

@@ -14,6 +14,9 @@ const AdminDashboard = () => {
   const [editingSiteConfig, setEditingSiteConfig] = useState(false);
   const [inviteCode, setInviteCode] = useState(null);
   const [inviteExpiry, setInviteExpiry] = useState(null);
+  const [resetPasswordBroker, setResetPasswordBroker] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const navigate = useNavigate();
 
   const loadStats = useCallback(async () => {
@@ -157,12 +160,82 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleResetPassword = async () => {
+    if (!resetPasswordBroker) return;
+    if (newPassword.length < 6) {
+      alert('Password must be at least 6 characters');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+    try {
+      await adminAPI.resetBrokerPassword(resetPasswordBroker.id, newPassword);
+      alert('Password reset successfully!');
+      setResetPasswordBroker(null);
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      alert(error.response?.data?.error || 'Failed to reset password');
+    }
+  };
+
   const totalOrders = orders.length;
   const totalRevenue = orders.reduce((sum, order) => sum + order.cost, 0);
   const paidRevenue = orders.filter(o => o.is_paid).reduce((sum, order) => sum + order.cost, 0);
 
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* Password Reset Modal */}
+      {resetPasswordBroker && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">Reset Password for {resetPasswordBroker.profile?.name || resetPasswordBroker.username}</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="Enter new password (min 6 characters)"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="Confirm new password"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleResetPassword}
+                  className="flex-1 bg-purple-600 text-white py-2 rounded-lg font-semibold hover:bg-purple-700"
+                >
+                  Reset Password
+                </button>
+                <button
+                  onClick={() => {
+                    setResetPasswordBroker(null);
+                    setNewPassword('');
+                    setConfirmPassword('');
+                  }}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <nav className="bg-purple-600 text-white p-4 shadow-lg">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold">👑 Super Admin Dashboard</h1>
@@ -445,7 +518,13 @@ const AdminDashboard = () => {
                         />
                       </button>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
+                      <button
+                        onClick={() => setResetPasswordBroker(broker)}
+                        className="text-purple-600 hover:text-purple-900 font-semibold"
+                      >
+                        Reset Password
+                      </button>
                       <button
                         onClick={() => handleDeleteBroker(broker.id)}
                         className="text-red-600 hover:text-red-900 font-semibold"

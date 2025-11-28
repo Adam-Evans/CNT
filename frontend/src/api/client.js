@@ -20,6 +20,7 @@ export const authAPI = {
   login: (username, password) => api.post('/auth/login', { username, password }),
   register: (username, password, inviteCode) => api.post('/auth/register', { username, password, invite_code: inviteCode }),
   getCurrentUser: () => api.get('/auth/me'),
+  changePassword: (currentPassword, newPassword) => api.put('/auth/change-password', { current_password: currentPassword, new_password: newPassword }),
 };
 
 // Broker API
@@ -49,6 +50,7 @@ export const adminAPI = {
   updateSiteConfig: (data) => api.put('/admin/site-config', data),
   updateBrokerProfile: (id, data) => api.put(`/admin/brokers/${id}`, data),
   updateBrokerAIContent: (id, data) => api.put(`/admin/brokers/${id}/ai-content`, data),
+  resetBrokerPassword: (id, newPassword) => api.put(`/admin/brokers/${id}/reset-password`, { new_password: newPassword }),
   deleteBroker: (id) => api.delete(`/admin/brokers/${id}`),
   generateInvite: () => api.post('/admin/invites'),
 };
